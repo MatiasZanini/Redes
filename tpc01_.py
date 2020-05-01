@@ -417,6 +417,177 @@ b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha
 *Comentario Debora:*
 *graficar con plt.bar pero que se va a ver mal, mejor con plt.scatter*
 
+"""
+
+import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import random
+from scipy.stats import norm
+
+G = nx.read_gml('D:/Redes 2020/TC01_data/dolphins.gml')
+with open('D:/Redes 2020/TC01_data/dolphinsGender.txt') as f:
+    gender=f.readlines()
+lista_N=[]
+lista_G=[]
+for i in np.arange(len(gender)):
+    gender[i]=gender[i].replace('\n','').split('\t')
+    lista_N.append(gender[i][0])
+    lista_G.append(gender[i][1])
+gender=dict(gender)
+plt.figure('Original')
+nx.draw(G,labels=gender)
+plt.title('Original')
+plt.show()
+plt.close()
+plt.figure('Spring')
+nx.draw_spring(G, labels=gender)
+plt.title('Spring')
+plt.show()
+plt.close()
+plt.figure('Kamada Kawai')
+nx.draw_kamada_kawai(G,labels=gender)
+plt.title('Kamada Kawai')
+plt.show()
+plt.close()
+plt.figure('Circular')
+nx.draw_circular(G,labels=gender)
+plt.title('Circular')
+plt.show()
+plt.close()
+plt.figure('Spectral')
+nx.draw_spectral(G,labels=gender)
+plt.title('Spectral')
+plt.show()
+plt.close()
+#Medio que en todos menos el circular y un poco menos en el spectral se ven dos grupos/clusters/comunidades. Por un lado
+#uno de los clusters está compuesto principalmente por delfines de género masculino (con pocos femeninos) y
+#el otro presenta la situación opuesta.
+adj_real=nx.to_pandas_adjacency(G)
+h=0
+for i in adj_real.index:
+    for j in adj_real.columns:
+        if i!=j and gender[i]==gender[j] and adj_real[j][i]!=0:
+            h=h+1
+h_real=h/2*G.number_of_edges()
+#15264.0 (real)
+#asignacion aleatoria de género:
+distribucion=[]
+for n in np.arange(0,1000):
+    copia_G=lista_G.copy()#hago una copia para no modificar el real
+    random.shuffle(copia_G)
+    gender_rand = dict(zip(lista_N, copia_G))
+    adj=nx.to_pandas_adjacency(G)
+    h=0
+    for i in adj.index:
+        for j in adj.columns:
+            if i!=j and gender_rand[i]==gender_rand[j] and adj[j][i]!=0:
+                h=h+1
+    h=h/2*G.number_of_edges()
+    distribucion.append(h)
+
+mu, std = norm.fit(distribucion)#voy a fitear con una gaussiana para hacer el ejercicio siguiente
+plt.figure('Histograma genero random (1000)')
+plt.hist(distribucion,density=True,facecolor='blue', alpha=0.5, ec='black')#normalizado
+xmin, xmax = plt.xlim()
+x = np.linspace(xmin, xmax, 100)
+p = norm.pdf(x, mu, std)
+plt.plot(x, p, 'k', linewidth=1)
+plt.title('Histograma homofilia genero random (1000)')
+#A priori diría que sí hay homofilia.
+#Como estimación visual del valor medio, yo diría que está entre 10.500 y 12.000, podríamos decir 11.000+-1000
+#Para verificarlo pordemos fitear con una gaussiana (como hicimos) o hacer valor_medio=np.mean(distribucion)=mu
+#error=np.std(distribucion)=std.
+#igualmente, no para cualquier modelo nulo se puede fitear encima una gaussiana
+#no sé muy bien como calcular el p-valor pero creo que es contar la cantidad de veces
+#que en la distribucion random te dio mayor a la real y dividirlo por el total:
+count=0
+for i in distribucion:
+    if i>h_real:
+        count=count+1
+p=count/len(distribucion)#p=0.0, es decir, no hay ningun caso en que la homofilia shuffleada supere la real
+
+#por lo que vimos en clase, podemos basarnos en el grado de los nodos: (en realidad lo vimos con overlap)
+#para una manera gradual, podríamos eliminar los enlaces con mayor grado (si no funciona probamos con overlap):
+#probé eso y no funcionó así que después probe sacando los de menor grado primero, que para mi tiene más sentido
+#y funca bárbaro pero da 46 pasos (elimina 46 nodos)
+
+#G_copia=G.copy()
+#grados=sorted(G_copia.degree, key=lambda x: x[1], reverse=False)
+#pasos=0
+#for i,j in grados:
+#    if nx.is_connected(G_copia):
+#        G_copia.remove_node(i)
+#        pasos=pasos+1
+#gender_2={}
+#for i in G_copia.nodes:
+#    gender_2[i]=gender[i]
+#nx.draw(G_copia,labels=gender_2)
+#comparo sacando nodos de forma random
+
+#ahora quiero probar teniendo en cuenta el genero tambien (funciona lindo también) y elimina 36 nodos
+#es decir que lo hace con menor cantidad de pasos. Yo iría con este
+G_copia=G.copy()
+grados=sorted(G_copia.degree, key=lambda x: x[1], reverse=False)
+adj_copia=nx.to_pandas_adjacency(G_copia)
+ind_col=[]
+for i,j in grados:
+    ind_col.append(i)
+df_orden=pd.DataFrame(index=ind_col,columns=ind_col)
+for i in adj_copia.index:
+    for j in adj_copia.columns:
+        df_orden[j][i]=adj_copia[j][i]
+for i in df_orden.index:
+    for j in df_orden.columns:
+        if i!=j and gender[i]==gender[j] and df_orden[j][i]!=0 and nx.is_connected(G_copia):
+            df_orden.drop(i,inplace=True)
+            df_orden.drop(columns=j, inplace=True)
+            G_copia.remove_node(i)
+            break
+gender_2={}
+for i in G_copia.nodes:
+    gender_2[i]=gender[i] 
+plt.figure()
+nx.draw(G_copia,labels=gender_2)
+tamanio=[len(c) for c in sorted(nx.connected_components(G_copia), key=len, reverse=True)]
+pasos=G.number_of_nodes()-G_copia.number_of_nodes()
+
+
+#de forma aleatoria:
+tamanio_r=[]
+pasos_r=[]
+for n in np.arange(0,1000):
+    print(n)
+    G_r=G.copy()
+    nodos=list(G_r.nodes()).copy()
+    random.shuffle(nodos)
+    count=0
+    for i in nodos:
+        if nx.is_connected(G_r):
+            G_r.remove_node(i)
+            count=count+1
+    pasos_r.append(count)
+    tamanio_r.append([len(c) for c in sorted(nx.connected_components(G_r), key=len, reverse=True)])
+
+#primero podemos descartar aquellos casos con 3 o más componentes
+#Después podemos ver todos los casos que quedaron que tienen tamaños "comparables" y ver la cantidad de pasos
+#que se dieron. 
+mayor_2=0
+steps=[]
+for i in np.arange(0,len(tamanio_r)):
+    if len(tamanio_r[i])>2:
+        mayor_2=mayor_2+1
+    elif tamanio_r[i][0]>3 and tamanio_r[i][1]>3:
+        steps.append(pasos_r[i])
+#grupos de tamaño 2 con 1 grupo de 1/2 o 3 nodos:
+total_1=len(tamanio_r)-len(steps)-mayor_2 #748 (75% aprox)
+#237 con longitud mayor que 2
+plt.figure('Pasos')
+plt.hist(steps,density=False,facecolor='blue', alpha=0.5, ec='black')
+plt.title('Pasos')
+prom=np.mean(steps)#18 pasos aprox.
+
 --------------------------------------------------------
 
 La idea general de este ejercicio es, a partir de la red de sistemas autónomos de internet, adquirir la noción de distribución de grado y las distintas estrategias que pueden utilizarse para estudiar dicha distribución.

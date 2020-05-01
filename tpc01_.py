@@ -15,6 +15,7 @@ import pandas as pd       #DB
 import numpy as np        #matemática, simil maltab 
 import networkx as nx
 import matplotlib.pyplot as plt
+from matplotlib_venn import venn3
 
 # Evitar acumulación de mensajes de warning en el display
 import warnings  
@@ -49,17 +50,93 @@ def abrir_txt(lista_de_enlaces_txt):
 
 # Red = nx.read_gml(drive_as_22july06_gml)
 
+path='D:/nuestras carpetas/Mati/Libros y apuntes/Redes/Codigos/TPC 1/tc1 data/'
+filename=['yeast_AP-MS','yeast_LIT','yeast_Y2H']
+df=pd.DataFrame(index=filename,columns=['N','L','<k>','k_max','k_min','rho','<C_i>','C','D'])
+ne=pd.DataFrame(index=filename,columns=['nodos','enlaces'])#lo vamos a usar después para los diagramas de venn
+for file in filename:
+    with open(path+file+'.txt') as f:#abrimos el archivo
+        data=f.readlines()
+    
+    for i in np.arange(len(data)):#transformamos en una lista de tuples
+        data[i]=tuple(data[i].replace('\n','').split('\t'))
 
-# Rutas a los archivos con los datos de las redes
-drive_yeast_Y2H_txt = r'D:\nuestras carpetas\Mati\Libros y apuntes\Redes\Codigos\TPC 1\tc1 data\yeast_Y2H.txt'
-drive_yeast_AP_MS_txt = r'D:\nuestras carpetas\Mati\Libros y apuntes\Redes\Codigos\TPC 1\tc1 data\yeast_AP-MS.txt'
-drive_yeast_LIT_txt = r'D:\nuestras carpetas\Mati\Libros y apuntes\Redes\Codigos\TPC 1\tc1 data\yeast_LIT.txt'
+    G=nx.Graph()#inicializamos el grafo
+    G.add_edges_from(data)#agregamos los nodos y enlaces
+    ne.loc[file]=[G.nodes(),G.edges()]
+    plt.figure()
+    plt.title(file)
+    nx.draw(G, 
+        width = 2, # Ancho de los enlaces
+        node_color = 'lightblue', # Color de los nodos
+        edge_color = 'black', # Color de los enlaces
+        node_size = 10, # Tamaño de los nodos
+        with_labels = False # True o False, Pone o no el nombre de los nodos
+       )
+    #plt.savefig('D:/Redes 2020/TC01_ejercicios/1a_'+file+'.png')
+    plt.show()
+    plt.close()
+    df['N'][file]=G.number_of_nodes()
+    df['L'][file]=G.number_of_edges()
+    df['<k>'][file]=2*G.number_of_edges()/G.number_of_nodes()
+    grados=[m for n,m in G.degree()]
+    df['k_max'][file]=np.max(grados)
+    df['k_min'][file]=np.min(grados)
+    df['rho'][file]=2*G.number_of_edges()/(G.number_of_nodes()*(G.number_of_nodes()-1))
+    #creo que esto se puede hacer con nx.density()
+    df['<C_i>'][file]=nx.average_clustering(G)
+    df['C'][file]=nx.transitivity(G)
+    if nx.is_connected(G):
+        df['D'][file]=nx.diameter(G)
+    else:
+        df['D'][file]='infinito'
+
+df.to_csv('D:/nuestras carpetas/Mati/Libros y apuntes/Redes/Codigos/TPC 1/tc1 data/1b.csv')
+
+plt.figure()
+nodos_venn = venn3([set(ne['nodos'][filename[0]]), set(ne['nodos'][filename[1]]),set(ne['nodos'][filename[2]])],set_labels = ('yeast_AP-MS', 'yeast_LIT', 'yeast_Y2H'))
+plt.title('Diagrama de Venn (nodos)')
+#plt.savefig('D:/Redes 2020/TC01_ejercicios/1d_nodos.png')
+
+plt.figure()
+nodos_venn = venn3([set(ne['enlaces'][filename[0]]), set(ne['enlaces'][filename[1]]),set(ne['enlaces'][filename[2]])],set_labels = ('yeast_AP-MS', 'yeast_LIT', 'yeast_Y2H'))
+plt.title('Diagrama de Venn (enlaces)')
+#plt.savefig('D:/Redes 2020/TC01_ejercicios/1d_ejes.png')
+
+'''
+algunas cosas para decir
+El grafo es maso menos parecido para todas las redes, hay un conjunto de proteínas de levadura en el
+medio y un conjunto afuera que lo rodea. En terminos de nodos, la última red tiene aprox 500 más que los otros.
+Podemos ver en la cantidad de enlaces y el grado que la primer red, donde los enlaces se posicionan si
+2 proteínas interactúan es superior a los otros (lo mismo ocurre con el grado máximo). La densidad es similar
+para las 3 redes, un poco superior para la primera (coíncide con los enlaces y el grado). El coeficiente
+de clustering mustra que hay mayor cantidad de nodos que cumplen la clausura transitiva en la primer red, es
+decir si la proteína X interactúa con la proteína Y y la Z, es probable que las proteínas Y y Z interactúen entre
+sí (de hecho como es parecido a 1/2 te diría que la mitad de los nodos cumplen la clausura transitiva. 
+En cuanto a la segunda red, vemos que el coeficiente de clustering es menor (aproximadamente 1/3 o 1/4 de 
+los nodos cumplen CT), suponemos uqe esto se debe a que una proteína puede cumplir más de una función
+y aquellas proteínas cuyos vecinos están enlazados por diferentes funciones, no se enlazan entre sí.
+Por último el coeficiente de clustering es menos en la 3 red, es decir, que no necesariamente si
+las proteínas X-Y aparecen en un paper y X-Z aparece en otro, no hay una gran probabilidad de que 
+Y-Z aparezcan en otro paper, principalmente porque los paper pueden estar hablando de diferentes temáticas.
+Algo similar se puede deducir del coeficiente de clustering global.
+Dado que las redes no son conexas, por convención el diametro es infinito.
+'''
 
 
-#Inicializamos los datos:  
-lista_de_enlaces_1 = abrir_txt(drive_yeast_Y2H_txt)
-lista_de_enlaces_2 = abrir_txt(drive_yeast_AP_MS_txt)
-lista_de_enlaces_3 = abrir_txt(drive_yeast_LIT_txt)
+
+# ruta_archivos = 'D:\nuestras carpetas\Mati\Libros y apuntes\Redes\Codigos\TPC 1\tc1 data\'
+
+# # Rutas a los archivos con los datos de las redes
+# drive_yeast_Y2H_txt = (ruta_archivos + 'yeast_Y2H.txt')
+# drive_yeast_AP_MS_txt = ruta_archivos + 'yeast_AP-MS.txt'
+# drive_yeast_LIT_txt = ruta_archivos + 'yeast_LIT.txt'
+
+
+# #Inicializamos los datos:  
+# lista_de_enlaces_1 = abrir_txt(drive_yeast_Y2H_txt)
+# lista_de_enlaces_2 = abrir_txt(drive_yeast_AP_MS_txt)
+# lista_de_enlaces_3 = abrir_txt(drive_yeast_LIT_txt)
 
 # from google.colab import drive
 # drive.mount('/content/drive')
@@ -354,6 +431,15 @@ Diametro = nx.diameter(largest_cc)
 
 print('El diámetro de la red es: ' + str(Diametro))
 
+
+#%%
+
+################################################################################
+#                               PUNTO 2 
+################################################################################
+
+
+
 """#Ejercicio 2
 Considere la red social de 62 delfines de Nueva Zelanda (dolphins.txt).
 
@@ -589,6 +675,15 @@ plt.hist(steps,density=False,facecolor='blue', alpha=0.5, ec='black')
 plt.title('Pasos')
 prom=np.mean(steps)#18 pasos aprox.
 
+
+#%%
+
+################################################################################
+#                               PUNTO 3 
+################################################################################
+
+
+
 """--------------------------------------------------------
 
 La idea general de este ejercicio es, a partir de la red de sistemas autónomos de internet, adquirir la noción de distribución de grado y las distintas estrategias que pueden utilizarse para estudiar dicha distribución.
@@ -679,4 +774,18 @@ La idea final es que estudiemos la relación entre el grado medio de los vecinos
 ## Inciso (b)
 Repetir lo anterior pero para las redes de proteínas
 """
+
+#%%
+
+################################################################################
+#                               PUNTO 4 
+################################################################################
+
+
+
+
+
+
+
+
 

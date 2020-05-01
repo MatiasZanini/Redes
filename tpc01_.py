@@ -424,7 +424,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import random
-from scipy.stats import norm
+#from scipy.stats import norm
 
 G = nx.read_gml('D:/Redes 2020/TC01_data/dolphins.gml')
 with open('D:/Redes 2020/TC01_data/dolphinsGender.txt') as f:
@@ -478,28 +478,29 @@ for n in np.arange(0,1000):
     copia_G=lista_G.copy()#hago una copia para no modificar el real
     random.shuffle(copia_G)
     gender_rand = dict(zip(lista_N, copia_G))
-    adj=nx.to_pandas_adjacency(G)
     h=0
-    for i in adj.index:
-        for j in adj.columns:
-            if i!=j and gender_rand[i]==gender_rand[j] and adj[j][i]!=0:
+    for i in adj_real.index:
+        for j in adj_real.columns:
+            if i!=j and gender_rand[i]==gender_rand[j] and adj_real[j][i]!=0:
                 h=h+1
     h=h/2*G.number_of_edges()
     distribucion.append(h)
 
-mu, std = norm.fit(distribucion)#voy a fitear con una gaussiana para hacer el ejercicio siguiente
+#al final no voy a fitear con la gaussiana, lo dejo como comentado por si lo queremos agregar
+#sino lo borramos en la version final
+#mu, std = norm.fit(distribucion)#voy a fitear con una gaussiana
 plt.figure('Histograma genero random (1000)')
 plt.hist(distribucion,density=True,facecolor='blue', alpha=0.5, ec='black')#normalizado
-xmin, xmax = plt.xlim()
-x = np.linspace(xmin, xmax, 100)
-p = norm.pdf(x, mu, std)
-plt.plot(x, p, 'k', linewidth=1)
+#xmin, xmax = plt.xlim()
+#x = np.linspace(xmin, xmax, 100)
+#p = norm.pdf(x, mu, std)
+#plt.plot(x, p, 'k', linewidth=1)
 plt.title('Histograma homofilia genero random (1000)')
 #A priori diría que sí hay homofilia.
 #Como estimación visual del valor medio, yo diría que está entre 10.500 y 12.000, podríamos decir 11.000+-1000
-#Para verificarlo pordemos fitear con una gaussiana (como hicimos) o hacer valor_medio=np.mean(distribucion)=mu
-#error=np.std(distribucion)=std.
-#igualmente, no para cualquier modelo nulo se puede fitear encima una gaussiana
+#Para verificarlo pordemos hacer
+valor_medio=np.mean(distribucion)
+std=np.std(distribucion)
 #no sé muy bien como calcular el p-valor pero creo que es contar la cantidad de veces
 #que en la distribucion random te dio mayor a la real y dividirlo por el total:
 count=0
@@ -550,8 +551,8 @@ for i in G_copia.nodes:
     gender_2[i]=gender[i] 
 plt.figure()
 nx.draw(G_copia,labels=gender_2)
-tamanio=[len(c) for c in sorted(nx.connected_components(G_copia), key=len, reverse=True)]
-pasos=G.number_of_nodes()-G_copia.number_of_nodes()
+tamanio=[len(c) for c in sorted(nx.connected_components(G_copia), key=len, reverse=True)]#[17, 9]
+pasos=G.number_of_nodes()-G_copia.number_of_nodes()#36
 
 
 #de forma aleatoria:
@@ -570,7 +571,7 @@ for n in np.arange(0,1000):
     pasos_r.append(count)
     tamanio_r.append([len(c) for c in sorted(nx.connected_components(G_r), key=len, reverse=True)])
 
-#primero podemos descartar aquellos casos con 3 o más componentes
+#primero podemos descartar aquellos casos que quedarons con más de 3 componentes
 #Después podemos ver todos los casos que quedaron que tienen tamaños "comparables" y ver la cantidad de pasos
 #que se dieron. 
 mayor_2=0
@@ -578,17 +579,17 @@ steps=[]
 for i in np.arange(0,len(tamanio_r)):
     if len(tamanio_r[i])>2:
         mayor_2=mayor_2+1
-    elif tamanio_r[i][0]>3 and tamanio_r[i][1]>3:
+    elif tamanio_r[i][0]>2 and tamanio_r[i][1]>2:
         steps.append(pasos_r[i])
-#grupos de tamaño 2 con 1 grupo de 1/2 o 3 nodos:
-total_1=len(tamanio_r)-len(steps)-mayor_2 #748 (75% aprox)
-#237 con longitud mayor que 2
+#grupos de tamaño 2 con 1 grupo de 1 o 2 nodos:
+total_1=len(tamanio_r)-len(steps)-mayor_2 #740 (75% aprox)
+#237 aprox con longitud mayor que 2
 plt.figure('Pasos')
 plt.hist(steps,density=False,facecolor='blue', alpha=0.5, ec='black')
 plt.title('Pasos')
 prom=np.mean(steps)#18 pasos aprox.
 
---------------------------------------------------------
+"""--------------------------------------------------------
 
 La idea general de este ejercicio es, a partir de la red de sistemas autónomos de internet, adquirir la noción de distribución de grado y las distintas estrategias que pueden utilizarse para estudiar dicha distribución.
 ## Inciso (a)

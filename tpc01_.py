@@ -596,10 +596,6 @@ logarítmica para los mismos.
 
 bins_log = np.log10(np.arange(1, max(grados_list)))
 
-# bins_log = bins_log[:-1] + np.diff(bins_log)
-
-# bins_log = np.append(bins_log, np.log10(max(grados_list)))
-
 grados_log = np.log10(grados)
 
 #Hacemos el histograma completo, con todos los posibles grados para los nodos de la red:

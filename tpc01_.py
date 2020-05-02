@@ -153,7 +153,7 @@ print(df)
 #Descomentar lo siguiente si se desea guardar el archivo con la tabla en formato .csv :
 #df.to_csv(path + '1b.csv')
 
-
+#%%
 '''
 En cuanto a si la red es dirigida o no, podemos basarnos en la matriz de adyacencia. Si la misma es simétrica, resulta
 natural considerar la red como no dirigida, dado que no se tiene en cuenta el sentido de sus enlaces.
@@ -503,7 +503,145 @@ prom=np.mean(steps)#18 pasos aprox.
 #                               PUNTO 3 
 ################################################################################
 
-# Red = nx.read_gml(drive_as_22july06_gml)
+path = 'C:/Users/Mati/Documents/GitHub/Redes/tc1 data/' #Colocar la ruta donde se encuentra alojado el archivo
+
+file = 'as-22july06.gml'
+
+
+red_internet = nx.read_gml(path + file) #Abrimos el grafo de networkx desde el archivo .gml
+
+'''
+Inciso a)
+'''
+
+grados_list = [] #Inicializamos una lista que contendrá los grados de cada nodo en la red
+
+nodos = red_internet.nodes()
+
+for nodo in nodos:
+    
+    grado = red_internet.degree(nodo)
+    
+    grados_list.append(grado) #Agregamos el grado de cada nodo a la lista de grados
+
+grados = np.asarray(grados_list)
+
+print('El máximo grado alcanzado por un nodo dentro de la red es ', max(grados))  
+
+#%%
+
+#Bins lineales:
+    
+bins_lineal = np.arange(max(grados_list))
+
+#Hacemos el histograma completo, con todos los posibles grados para los nodos de la red:
+hist, bins_completo = np.histogram(grados, bins = bins_lineal, normed = True) #Con normed = True representa probabilidad
+
+bins = bins_completo[:-1]
+
+plt.bar(x = bins, height = hist) 
+
+plt.xlabel('grado', fontsize = 16)
+
+plt.ylabel('Probabilidad(grado)', fontsize = 16)
+
+plt.show()
+
+#%%
+'''
+Se observa que la mayor densidad de probabilidad se encuentra en una región de bins mucho menor al máximo.
+Dado que el máximo grado que alcanzó un nodo dentro de la red es tan alto como raro de ver, decidimos truncar
+el histograma. Para ello, se calculó el área debajo de la curva de probabilidades sumando el histograma paso a paso,
+con tamaño de bin 1. Haciendo esto, partiendo desde 1 bin y luego agregando bins de forma iterativa, se buscó el bin
+a partir del cual el área debajo de la curva es del 99%, indicando que el resto de los bins contienen simplemente
+outlayers que no representan el grado típico de los nodos de la red.
+'''
+
+contador = 1
+
+while np.sum(hist[:contador]) < 0.99: #Pedimos que pare de sumar cuando el área bajo la curva supere 0.99
+    
+    print(contador, np.sum(hist[:contador]))
+    
+    contador += 1
+
+max_bin = contador #Este será el bin hasta el cual realizaremos el histograma.
+
+bins_recorte = np.arange(max_bin)
+
+hist_recorte, bins_completo_recorte = np.histogram(grados, bins = bins_recorte, normed = True)
+
+bins_recorte = bins_completo_recorte[:-1]
+
+plt.grid(axis = 'y')
+
+plt.bar(x = bins_recorte, height = hist_recorte, tick_label = bins_recorte) 
+
+plt.xlabel('grado', fontsize = 16)
+
+plt.ylabel('Probabilidad(grado)', fontsize = 16)
+
+plt.show()
+
+'''
+Ahora si es posible visualizar mejor la forma de la curva, luego de haber retirado los outlayers
+'''
+#%% 
+#Bins logarítmicos:
+
+'''
+Otra manera de visualizar los datos, teniendo en cuenta la distribución irregular de los bins, es utilizar una escala
+logarítmica para los mismos.
+'''    
+
+bins_log = np.log10(np.arange(1, max(grados_list)))
+
+# bins_log = bins_log[:-1] + np.diff(bins_log)
+
+# bins_log = np.append(bins_log, np.log10(max(grados_list)))
+
+grados_log = np.log10(grados)
+
+#Hacemos el histograma completo, con todos los posibles grados para los nodos de la red:
+hist_log, bins_log_completo = np.histogram(grados_log, bins = bins_log+1)
+
+#calculamos el área bajo la curva de distribución para normalizar:
+area = 0
+
+for i in range(len(hist_log)):
+    
+    area_barra = hist_log[i] * bins_log_completo[i]
+    
+    area += area_barra
+    
+hist_log_norm = hist_log / area #normalizamos
+
+bins_log = bins_log_completo[:-1]
+
+plt.grid(axis = 'y')
+
+plt.bar(x = bins_log, height = hist_log_norm, width = np.diff(bins_log_completo))
+
+plt.xlabel('Log(grado)', fontsize = 16)
+
+plt.ylabel('Probabilidad(Log(grado))', fontsize = 16)
+
+plt.show()
+
+
+'''
+Vemos ahora que no es necesario truncar el histograma para visualizarlo correctamente. Poniéndolo en escala logarítmica,
+las diferencias abruptas se achican, dando un panorama completo de la distribución.
+'''
+
+
+#%%
+
+
+
+
+
+
 
 """--------------------------------------------------------
 

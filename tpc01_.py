@@ -16,7 +16,7 @@ import numpy as np        #matemática, simil maltab
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn3
-
+import igraph as ig
 # Evitar acumulación de mensajes de warning en el display
 import warnings  
 warnings.filterwarnings("ignore")
@@ -637,102 +637,51 @@ las diferencias abruptas se achican, dando un panorama completo de la distribuci
 
 #%%
 
+'''
+Inciso b)
+'''
+
+'''
+A partir del paper: M.E.J. NEWMAN, Power laws, Pareto distributions and Zipf’s law, Contemporary Physics, Vol. 46, 
+No. 5, September–October 2005, 323 – 351
+se propone una ley de potencias:
+'''
+  
+def power(x, xmin, alpha):
+    
+    '''
+    xmin es el valor a partir del cual vale la ley de potencias
+    '''
+    
+    C = (alpha-1)* xmin**(alpha-1)
+    
+    return C * x**(-alpha) 
+
+hist_no_norm, bins_no_norm = np.histogram(grados, bins = bins_recorte) #Obtenemos el histograma recortado sin normalizar.
+
+alpha = ig.power_law_fit(hist_no_norm, xmin = 1, method = 'discrete', return_alpha_only = True)
+
+xmin = 1 #Sale de ver la línea anterior con return_alpha_only = False
+
+x = np.linspace(1, max_bin, 1000)
+
+power_fit = power(x, xmin, alpha)
 
 
+#Comparamos el histograma con el fiteo:
 
+plt.bar(x = bins_recorte, height = hist_recorte, tick_label = bins_recorte)
 
+plt.plot(x, power_fit, color = 'red', label = 'Ley de Potencias') 
 
+plt.xlabel('grado', fontsize = 16)
 
-"""--------------------------------------------------------
+plt.ylabel('Probabilidad(grado)', fontsize = 16)
 
-La idea general de este ejercicio es, a partir de la red de sistemas autónomos de internet, adquirir la noción de distribución de grado y las distintas estrategias que pueden utilizarse para estudiar dicha distribución.
-## Inciso (a)
-La idea de este inciso es graficar la distribución de grado de distintas maneras para tener una apoximación a la naturaleza de dicha distribución.
-Si bien existen muchas librerías que permiten generar histogramas, las dos más usuales son: numpy y matplotlib. La segunda nos permite mediante un simple comando generar el histograma y graficar al mismo tiempo. En cambio, con la primera, generamos la distribución, y después necesitamso de otra librería para graficar.
+plt.legend(fontsize = 15)
 
-
-```
-# Lista con los grados de los nodos (una de las posibilidades de generarla)
-
-lista_de_grados = []
-for nodo in Red.nodes()
-  grado = Red.degree(nodo)
-  lista_de_grados.append(grado)
-
-# Caso 1
-plt.hist(lista_de_grados) # La función plt.hist() tiene muchos atributos: cantidades de bins, normalización, etc
 plt.show()
 
-# Caso 2
-hist, bins = np.histogram(lista_de_grados) # Esta función también tiene varios atributos: cantidad de bins, espaciado, etc.
-# bins es un array que da cuenta de dónde comienza y dónde termina cada bin, por lo tanto, tiene un elemento más que hist, que son la cantidad de nodos que caen dentro de un determinado bin. Tenemos que definir si tomaremos el centro de los bines, el comienzo o el final. En el siguiente ejemplo tomamos el comienzo
-plt.bar(x = bins[:-1], height = hist, width = np.diff(bins))
-plt.show()
-
-```
-La idea es que prueben cómo se ve la distribución de grado al variar la escala con la que se grafica (lineal o logarítmica) y al variar el bineado que se utiliza, es decir: bineado lineal o bineado logaritmico (usar un tamaño de bin constante o uno que varíe).
-## Inciso (b)
-Se busca encontrar la relación funcional para la distribución de grado. Para esto, se recomienda utilizar la librería scipy y sus funciones para ajustar.
-
-#Ejercicio 4
-Asortatividad
-
-a. Considere la red de colaboraciones científicas (netscience.gml) y la red de internet (asjuly06.gml). Analice si nodos de alto grado tienden a conectarse con nodos de alto grado
-o por el contrario suelen conectarse a nodos de bajo grado? (i.e la red es asortativa o disortativa respecto al grado?). Para ello:
-
-i. Determine, para nodos de grado k, cuánto vale en media el grado de sus vecinos.
-[hint R: se puede estimar primero el grado medio de los vecinos de cada nodo de
-la red y luego utilizar aggregate sobre esos datos, que permite estimar cantidades
-sobre subconjuntos determinados de datos de acuerdo a diferentes criterios]
-
-ii. Analizar la tendencia observada en un gráfico que consigne dicho valor knn(k)
-como función del grado.
-
-iii. Asumiendo que k_{nn}(k)=akmu
-, estime el exponente de correlación a partir de
-realizar una regresión de . Asegurese de graficar el fiteo en el
-grafico anterior. [hint R: lm permite hacer regresiones lineales]
-
-iv. Considere la red de colaboraciones y la de internet nuevamente Encuentre
-cuantitativamente la asortatividad de la red utilizando ahora el estimador
-propuesto por Newman:
-
-Para ello tenga encuenta lo desarrollado en las eqs [8.26 – 8.29] del libro de
-Newman.Como se corresponde este coeficiente con el estimado en el punto
-anterior? A qué se debe?
-
-b. Corra el script de cálculo (puntos i-iii) para las redes Y2H y AP-MS. Puede explicar lo
-que observa en cuanto a la asortatividad reportada?
-
-------------------------------------------
-
-La idea principal de este ejercicio es estudiar si en las redes propuestas (ojo, la red de colaboraciones es una red pesada) existe asortatividad en el grado. Más en general, comprender cuál es el grado medio de los vecinos de un nodo, en función del grado de este nodo. A su vez, se pide que se repita el análisis para las redes de proteínas vistas anteriormente.
-
-# Inciso (a)
-Para este inciso, es importante entender los pasos necesarios para llevar acabo la tarea pedida. Entendemos que, en primer lugar, es recomendable trabajar con el diccionario de nodos y sus respesctivos grados antes que una lista de grados (pensar, de forma alternativa, si puede ser útil trabajar con un diccionario cuyas llaves -keys- sean los distintos grados y los valores -values- listas de nodos con determinado grado). A su vez, para tener acceso a los vecinos de un nodo, podemos hacer uso de la matriz de adyacencia de la red, pero también tenemos una función de la librería networkx que nos permite acceder a un iterable con los vecinos de determinado nodo:
-
- -------------------------------------------------------
-
-En la practica, para construir knn(k) se suelen seguir los siguientes pasos. Primero, se calcula el grado
-de cada nodo de la red. Luego, se los agrupa a los nodos por grado. Tercero, para cada conjunto
-de nodos de determinado grado, se calcula el grado medio de los vecinos de cada nodo y luego se
-lo promedia por el total de nodos que determinado grado. De esta forma, se construye la relaci ́on
-knn(k).
-
-
-
-```
-# Opción 1
-vecinos_nodo_i = Red.neighbors(i) # donde Red es un nx.Graph() e i un nodo cualquiera
-
-# Opción 2
-vecinos_nodo_i = Red[i] # ojo porque acá obtenemos un diccionario donde podemso tener información sobre el enlace entre el nodo i y sus vecinos (por ejemplo el peso)
-```
-La idea final es que estudiemos la relación entre el grado medio de los vecinos de los nodos de grado k en función de k. El estudio de esta relación se debe hacer en base a los dos modelos propuestos (Newman y Barabasai) sobre el origen de la asortatividad.
-
-## Inciso (b)
-Repetir lo anterior pero para las redes de proteínas
-"""
 
 #%%
 

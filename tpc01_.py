@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore")
 def abrir_txt(lista_de_enlaces_txt):
 
     '''
-    Abre los datos de las redes guardados en .txt
+   Crea una lista con los datos de las redes guardados en .txt
     '''
     
     archivo = open(lista_de_enlaces_txt)
@@ -40,237 +40,135 @@ def abrir_txt(lista_de_enlaces_txt):
     
     for linea in archivo:
     
-        linea=linea.strip()
+        linea = linea.strip()
         
-        columna=linea.split()
+        columna = linea.split()
         
         data.append(columna)    
     
     return data
 
-# Red = nx.read_gml(drive_as_22july06_gml)
 
-path='D:/nuestras carpetas/Mati/Libros y apuntes/Redes/Codigos/TPC 1/tc1 data/'
-filename=['yeast_AP-MS','yeast_LIT','yeast_Y2H']
-df=pd.DataFrame(index=filename,columns=['N','L','<k>','k_max','k_min','rho','<C_i>','C','D'])
-ne=pd.DataFrame(index=filename,columns=['nodos','enlaces'])#lo vamos a usar después para los diagramas de venn
-for file in filename:
-    with open(path+file+'.txt') as f:#abrimos el archivo
-        data=f.readlines()
-    
-    for i in np.arange(len(data)):#transformamos en una lista de tuples
-        data[i]=tuple(data[i].replace('\n','').split('\t'))
-
-    G=nx.Graph()#inicializamos el grafo
-    G.add_edges_from(data)#agregamos los nodos y enlaces
-    ne.loc[file]=[G.nodes(),G.edges()]
-    plt.figure()
-    plt.title(file)
-    nx.draw(G, 
-        width = 2, # Ancho de los enlaces
-        node_color = 'lightblue', # Color de los nodos
-        edge_color = 'black', # Color de los enlaces
-        node_size = 10, # Tamaño de los nodos
-        with_labels = False # True o False, Pone o no el nombre de los nodos
-       )
-    #plt.savefig('D:/Redes 2020/TC01_ejercicios/1a_'+file+'.png')
-    plt.show()
-    plt.close()
-    df['N'][file]=G.number_of_nodes()
-    df['L'][file]=G.number_of_edges()
-    df['<k>'][file]=2*G.number_of_edges()/G.number_of_nodes()
-    grados=[m for n,m in G.degree()]
-    df['k_max'][file]=np.max(grados)
-    df['k_min'][file]=np.min(grados)
-    df['rho'][file]=2*G.number_of_edges()/(G.number_of_nodes()*(G.number_of_nodes()-1))
-    #creo que esto se puede hacer con nx.density()
-    df['<C_i>'][file]=nx.average_clustering(G)
-    df['C'][file]=nx.transitivity(G)
-    if nx.is_connected(G):
-        df['D'][file]=nx.diameter(G)
-    else:
-        df['D'][file]='infinito'
-
-df.to_csv('D:/nuestras carpetas/Mati/Libros y apuntes/Redes/Codigos/TPC 1/tc1 data/1b.csv')
-
-plt.figure()
-nodos_venn = venn3([set(ne['nodos'][filename[0]]), set(ne['nodos'][filename[1]]),set(ne['nodos'][filename[2]])],set_labels = ('yeast_AP-MS', 'yeast_LIT', 'yeast_Y2H'))
-plt.title('Diagrama de Venn (nodos)')
-#plt.savefig('D:/Redes 2020/TC01_ejercicios/1d_nodos.png')
-
-plt.figure()
-nodos_venn = venn3([set(ne['enlaces'][filename[0]]), set(ne['enlaces'][filename[1]]),set(ne['enlaces'][filename[2]])],set_labels = ('yeast_AP-MS', 'yeast_LIT', 'yeast_Y2H'))
-plt.title('Diagrama de Venn (enlaces)')
-#plt.savefig('D:/Redes 2020/TC01_ejercicios/1d_ejes.png')
-
-'''
-algunas cosas para decir
-El grafo es maso menos parecido para todas las redes, hay un conjunto de proteínas de levadura en el
-medio y un conjunto afuera que lo rodea. En terminos de nodos, la última red tiene aprox 500 más que los otros.
-Podemos ver en la cantidad de enlaces y el grado que la primer red, donde los enlaces se posicionan si
-2 proteínas interactúan es superior a los otros (lo mismo ocurre con el grado máximo). La densidad es similar
-para las 3 redes, un poco superior para la primera (coíncide con los enlaces y el grado). El coeficiente
-de clustering mustra que hay mayor cantidad de nodos que cumplen la clausura transitiva en la primer red, es
-decir si la proteína X interactúa con la proteína Y y la Z, es probable que las proteínas Y y Z interactúen entre
-sí (de hecho como es parecido a 1/2 te diría que la mitad de los nodos cumplen la clausura transitiva. 
-En cuanto a la segunda red, vemos que el coeficiente de clustering es menor (aproximadamente 1/3 o 1/4 de 
-los nodos cumplen CT), suponemos uqe esto se debe a que una proteína puede cumplir más de una función
-y aquellas proteínas cuyos vecinos están enlazados por diferentes funciones, no se enlazan entre sí.
-Por último el coeficiente de clustering es menos en la 3 red, es decir, que no necesariamente si
-las proteínas X-Y aparecen en un paper y X-Z aparece en otro, no hay una gran probabilidad de que 
-Y-Z aparezcan en otro paper, principalmente porque los paper pueden estar hablando de diferentes temáticas.
-Algo similar se puede deducir del coeficiente de clustering global.
-Dado que las redes no son conexas, por convención el diametro es infinito.
-'''
-
-
-
-# ruta_archivos = 'D:\nuestras carpetas\Mati\Libros y apuntes\Redes\Codigos\TPC 1\tc1 data\'
-
-# # Rutas a los archivos con los datos de las redes
-# drive_yeast_Y2H_txt = (ruta_archivos + 'yeast_Y2H.txt')
-# drive_yeast_AP_MS_txt = ruta_archivos + 'yeast_AP-MS.txt'
-# drive_yeast_LIT_txt = ruta_archivos + 'yeast_LIT.txt'
-
-
-# #Inicializamos los datos:  
-# lista_de_enlaces_1 = abrir_txt(drive_yeast_Y2H_txt)
-# lista_de_enlaces_2 = abrir_txt(drive_yeast_AP_MS_txt)
-# lista_de_enlaces_3 = abrir_txt(drive_yeast_LIT_txt)
-
-# from google.colab import drive
-# drive.mount('/content/drive')
-#%%
 '''
 Inciso a)
-    Presentamos una comparación gráfica entre las 3 redes
 '''
 
-Red_proteinas_1 = nx.Graph()
 
-Red_proteinas_1.add_edges_from(lista_de_enlaces_1) #lista_de_enlaces_1 es la que obtuvimos aplicando la función abrir_txt a alguno de los .txt. 
+#ruta donde se encuentran los archivos descargados:
+path = 'C:/Users/Mati/Documents/GitHub/Redes/tc1 data/'
 
-plt.figure() #abrimos una nueva figura
+#lista con los nombres de los archivos:
+filename = ['yeast_AP-MS','yeast_LIT','yeast_Y2H']
 
-plt.title('Red de proteinas: yeast_Y2H')
+grafos = []  #Inicializamos una lista que contendrá los 3 grafos de networkx en cada índice.
 
-nx.draw(Red_proteinas_1, 
-#nx.draw_kamada_kawai(Red_proteinas_1, 
+for file in filename:
+    
+    nombre_archivo = path + file + '.txt'
+    
+    data = abrir_txt(nombre_archivo) #creamos una lista con los enlaces para cada red.
+    
+    grafo = nx.Graph() #Inicializamos un grafo en cada paso de la iteración
+    
+    grafo.add_edges_from(data) #agregamos los nodos y enlaces
+    
+    grafos.append( grafo ) #guardamos el grafo en un índice de la lista grafos
 
-        width = .5, # Ancho de los enlaces
 
+
+#Ahora graficamos las 3 redes y las comparamos:
+   
+fig, axis = plt.subplots(1, len(grafos))
+
+contador = 0
+
+for G in grafos:
+    
+    contador +=1
+    
+    
+    #plt.figure()
+   # axis[contador-1].plot(1, len(grafos), contador)
+    axis[contador-1].set_title(filename[contador-1], fontsize = 16)
+    
+    nx.draw(G, 
+        width = 2, # Ancho de los enlaces
         node_color = 'blue', # Color de los nodos
-
         edge_color = 'violet', # Color de los enlaces
+        node_size = 10, # Tamaño de los nodos
+        with_labels = False, # True o False, Pone o no el nombre de los nodos
+        ax = axis[contador-1]
+        )
 
-        node_size = 5, # Tamaño de los nodos
-
-        with_labels = False # True o False, Pone o no el nombre de los nodos
-       )
-
-
-Red_proteinas_2 = nx.Graph()
-
-Red_proteinas_2.add_edges_from(lista_de_enlaces_2) #lista_de_enlaces_2 es la que obtuvimos aplicando la función abrir_txt a alguno de los .txt.
-
-plt.figure() #abrimos una nueva figura
-
-plt.title('Red de proteinas: yeast-AP_MS')
-
-nx.draw(Red_proteinas_2, 
-#nx.draw_kamada_kawai(Red_proteinas_2, 
-        width = .5, # Ancho de los enlaces
-
-        node_color = 'violet', # Color de los nodos
-
-        edge_color = 'blue', # Color de los enlaces
-
-        node_size = 5, # Tamaño de los nodos
-
-        with_labels = False # True o False, Pone o no el nombre de los nodos
-       )
-
-Red_proteinas_3 = nx.Graph()
-
-Red_proteinas_3.add_edges_from(lista_de_enlaces_3) #lista_de_enlaces_3 es la que obtuvimos aplicando la función abrir_txt a alguno de los .txt. 
-
-plt.figure() #abrimos una nueva figura
-
-plt.title('Red de proteinas: yeast_LIT')
-
-nx.draw(Red_proteinas_3, 
-#nx.draw_kamada_kawai(Red_proteinas_3, 
-
-        width = .5, # Ancho de los enlaces
-
-        node_color = 'green', # Color de los nodos
-
-        edge_color = 'red', # Color de los enlaces
-
-        node_size = 5, # Tamaño de los nodos
-
-        with_labels = False # True o False, Pone o no el nombre de los nodos
-       )
-
-plt.show()
+plt.show()    
+#Descomentar lo siguiente si se quiere guardar la figura en formato png:
+#plt.savefig(path+'1a_comparacion_grafica.png')
+    
 
 
 #%%
 
 '''
 Inciso b)
-    Listamos varias propiedades de las redes
 '''
 
-# i.
+#Ordenamos la tabla poniendo en las columnas los datos que solicita el ejercicio:
+df = pd.DataFrame(index = filename, columns = ['N','L','<k>','k_max','k_min','Densidad','<C_i>','C','Diámetro'])
 
-#Número de nodos en las 3 redes:
-N_nodos_1 = Red_proteinas_1.number_of_nodes()
+contador = 0
 
-N_nodos_2 = Red_proteinas_2.number_of_nodes()
+for file in filename:
+      
+    N = grafos[contador].number_of_nodes() #Numero de nodos
+    
+    L = grafos[contador].number_of_edges() #Numero de enlaces   
+    
+    df['N'][file] = N
+    
+    df['L'][file] = L
+    
+    df['<k>'][file] = 2*L / N
+    
+    grados = [m for n,m in grafos[contador].degree()]
+    
+    df['k_max'][file] = np.max(grados)
+    
+    df['k_min'][file] = np.min(grados)
+    
+    df['Densidad'][file] = 2*L  / ( N*(N-1)) #Otra posibilidad es: nx.density(grafos[contador])
+    
+    df['<C_i>'][file] = nx.average_clustering(grafos[contador])
+    
+    df['C'][file] = nx.transitivity(grafos[contador])
+    
+    if nx.is_connected(grafos[contador]):
+        df['Diámetro'][file] = nx.diameter(grafos[contador])
+    else:
+        df['Diámetro'][file] = 'infinito'
+    
+    contador += 1
+    
+print(df)
 
-N_nodos_3 = Red_proteinas_3.number_of_nodes()
+#Descomentar lo siguiente si se desea guardar el archivo con la tabla en formato .csv :
+#df.to_csv(path + '1b.csv')
 
-#ii.
-
-#Número de enlaces en las 3 redes:
-N_enlaces_1 = Red_proteinas_1.number_of_edges()
-
-N_enlaces_2 = Red_proteinas_2.number_of_edges()
-
-N_enlaces_3 = Red_proteinas_3.number_of_edges()
-
-
-#iii.
 
 '''
-Si no se lo aclara, uno puede interpretar que la red es tanto dirigida, como no dirigida. Sin embargo, es posible
-establecer un criterio basado en la matriz de adyacencia. Si la matriz de adyacencia de la red es simétrica, 
-resulta intuitivo pensar que la red es no dirigida, ya que no se tiene en cuenta el sentido de los enlaces.
-Vemos si la matriz es simétrica simplemente restándole su transpuesta y chequeando que se anule.
+En cuanto a si la red es dirigida o no, podemos basarnos en la matriz de adyacencia. Si la misma es simétrica, resulta
+natural considerar la red como no dirigida, dado que no se tiene en cuenta el sentido de sus enlaces.
+Por lo tanto, chequeamos que las 3 redes son simétricas a partir de su matriz de adyacencia:
 '''
 
-matriz_adyacencia_1 = nx.to_pandas_adjacency(Red_proteinas_1) # devuelve matriz de adyacencia como dataframe de la libreria pandas
+matrices = []
 
-print('La matriz de Adyacencia es: ')
-
-print(matriz_adyacencia_1) #mostramos como se ve una matriz tipica de adyacencia
-
-matriz_adyacencia_2 = nx.to_pandas_adjacency(Red_proteinas_2)
-
-matriz_adyacencia_3 = nx.to_pandas_adjacency(Red_proteinas_3)
-
-Adj1 = matriz_adyacencia_1.to_numpy() # la convertimos en matriz de numpy
-
-Adj2 = matriz_adyacencia_2.to_numpy()
-
-Adj3 = matriz_adyacencia_3.to_numpy()
-
-matrices = [Adj1, Adj2, Adj3]
+for G in grafos:
+    
+    matrices.append(nx.to_numpy_matrix(G))
 
 for i in matrices:
     
-    A = i - np.transpose(i)
+    A = i - np.transpose(i) #Si la matriz es igual a su transpuesta, entonces A será nula.
 
     if np.all(A==0):
         
@@ -279,157 +177,80 @@ for i in matrices:
     else:
         
         print('La matriz no es simétrica. La red es dirigida')
-    
-    
 
 
 
-
-
-    
 
 #%%
 
+'''
+Inciso c)
+
+La estructura de las redes es similar en todos los casos. Se encuentra una componente gigante de proteínas de
+levadura y varias componentes más pequeñas. 
+
+En terminos de nodos, la red Y2H tiene aproximadamente 500 más que las otras.
+Se puede observar que en la red AP-MS, donde los enlaces se adjudican si dos proteínas interactúan entre sí, 
+la cantidad de enlaces y el grado medio <k> es superior a los de los demás. Lo mismo ocurre con su grado máximo. 
+Por otro lado, la densidad resulta ser similar entre las 3 redes, siendo la AP-MS un poco superior.
+Esto era esperable tras observar que posee el mayor grado medio y la mayor cantidad de enlaces. 
+
+El coeficiente de clustering mustra que hay mayor cantidad de nodos que cumplen la clausura transitiva en la AP-MS.
+Esto quiere decir que, si la proteína X interactúa con la proteína Y y la Z, es probable que las proteínas Y y Z
+interactúen entre sí. Para la red LIT, vemos que el coeficiente de clustering es menor (aproximadamente 1/3 o 1/4 de 
+los nodos cumplen clausura transitiva). Una posibilidad es que esto ocurra debido a que una proteína puede
+cumplir más de una función. Luego, aquellas proteínas cuyos vecinos cumplen diferentes funciones, no se enlazan
+entre sí.
+Por último el menor coeficiente de clustering se halla en la red LIT. Esto quiere decir que, si
+las proteínas X-Y aparecen en un paper y X-Z aparece en otro, no necesariamente la probabilidad de que 
+Y-Z aparezcan en otro paper es grande. Esto puede deberse principalmente a que los papers pueden estar hablando
+de diferentes temáticas. Algo similar se puede deducir del coeficiente de clustering global.
+
+En cuanto al diámetro de las redes, dado que las mismas no son conexas, se tomó por convención que su diametro
+es infinito.
+'''
 
 
-
-
-
-
-
-"""#Ejercicio 1
-1) Considere las tres redes de interacción de proteínas relevadas para levadura disponibles en la
-página de la materia. Se trata de: una red de interacciones binarias (yeast_Y2H.txt), de copertenencia a complejos proteicos (yeast_AP-MS.txt) y obtenida de literatura (yeast_LIT.txt)
-obtenidas del Yeast Interactome Database.
-
-a. Presente una comparación gráfica de las 3 redes.
-
-b. Resuma en una tabla las siguientes características de dichas redes
-
-i. El número total de nodos, N
-
-ii. El número total de enlaces L, de la red
-
-iii. Si se trata de una red dirigida o no-dirigida
-
-iv. El grado medio <k> (<kin>,<kout> en caso de red dirigida), el grado máximo y
-mínimo de la red.
-
-v. La densidad de la red
-
-vi. Los coeficientes de clustering $<Ci>$ y $C_Δ$ de la red.
-
-vii. Diámetro de la red.
-
-
-c. Teniendo en cuenta la naturaleza de las interacciones reportadas, diga si es razonable lo
-que encuentra para ciertos observables calculados.
-
-d. Construya un diagrama de Venn que permita reconocer la cobertura, especificidad y coherencia de las interacciones reportadas por los tres datasets
-
------------------------------------------------------
-La idea de este ejercicio es indagar en algunas de las características topológicas principales de tres redes de interacción de proteínas de la levadura de cerveza.
-##Inciso (a)
-En este inciso, queremos simplemente visualizar las tres redes. Para esto, primero, necesitamos generarnos las redes a partir de las listas de enlaces obtenidas de la lectura de los .txt. Luego, podemos generar las visualizaciones con networkx.
-```
-import networkx as nx
-import matplotlib.pylab as plt # se recomienda fuertemente importar todos los paquetes en una celda aparte al principio del cuaderno
-
-Red_proteinas_1 = nx.Graph()
-Red_proteinas_1.add_edges_from(lista_de_enlaces_1) #lista_de_enlaces_1 es la que obtuvimos aplicando la función abrir_txt a alguno de los .txt. En networkx, no es necesario agregar primero los nodos y luego los enlaces. Podemos pasar los enlaces y agrega los nodos automáticamente.
-nx.draw(Red_proteinas_1)
-plt.show()
-```
-##Inciso (b)
-En este inciso buscamos comparar características topológicas de las redes. El grado, coeficiente de clustering, etc. Cada una de estas características puede obtenerse con funciones propias de la librería networkx. Recomendamos que ustedes mismxs las busquen y si tienen dudas nos consultan. Una forma interesante de dar cuenta de las distintas características de las redes es mediante una tabla. Para esto, pueden usar el paquete pandas
-```
-import pandas as pd
-# Lo más cómodo es utilizar diccionarios para cada columna
-diccionario_columna_nodos = {'Redes' : [Red_proteinas_1, Red_proteinas_2, Red_proteinas_3], 'Número de nodos' : [N1,N2,N3]} # y así una llave para cada una de las características que querramos
-tabla_comparativa = pd.DataFrame(data = diccionario_columna_nodos) # Existen múltiples atributos para esta función, recomendamos fuertemente incursionar en la documentación de la librería
-# Para visualizar la tabla, basta con escribir el nombre de la misma en la última línea de la celda utilizada y ejecutar
-tabla_comparativa
-```
-
-##Inciso (c)
-En este inciso se busca discutir lo obtenido en el anterior teniendo en cuenta la naturaleza de cada una de las redes estudiadas. 
-
-*Comentarios Debora:* 
-
-*Las 3 redes se arman con aproximadamente los mismos nodos, pero generando enlaces en forma diferente:
-La primer red pone enlaces si las proteinas interaccionan entre si.
-La segunda red pone enlaces si estan ligadas a la misma funcion
-La tercer red usa tecnicas de Data Mining a partir de papers relacionados con proteinas de levaduras y genera un enlace si los nombres de de diferentes proteinas están en una misma oracion. Esto trae problemas ya que por ejemplo la oracion: Proteina1 no interacciona con Proteina2, generaría un enlace en la red.*
-##Inciso (d)
-En este inciso se busca utilizar diagramas de Venn para estudiar qué tan distintas son las redes en el sentido de enlaces y nodos. Es decir, se sugiere realizar dos diagramas de Venn: uno para los nodos y otro para los enlaces.
-"""
+#%%
 
 '''
-b. Resuma en una tabla las siguientes características de dichas redes
-i. El número total de nodos, N
-.'''
-cantidad_nodos = Red_proteinas_1.number_of_nodes()    # devuelve la cantidad de nodos
-lista_nodos = list(Red_proteinas_1.nodes())           # devuelve los nombres de los nodos
-
-print('La red tiene ' + str(cantidad_nodos) + ' nodos')
-print('Los nodos son ' + str(lista_nodos))
-
-#ii. El número total de enlaces L, de la red
-cantidad_enlaces = Red_proteinas_1.number_of_edges()  # devuelve la cantidad de enlaces
-lista_enlaces = list(Red_proteinas_1.edges())         # devuelve los nombres de los enlaces
-print('La red tiene ' + str(cantidad_enlaces) + ' enlaces')
-print('Los enlaces son ' + str(lista_enlaces))
-
-matriz_adyacencia = nx.to_pandas_adjacency(Red_proteinas_1) # devuelve matriz de adyacencia como dataframe de la libreria pandas
-print('La matriz de Adyacencia es: ')
-print(matriz_adyacencia)
-
-#iii. Si se trata de una red dirigida o no-dirigida
-Adj1 = matriz_adyacencia.to_numpy() # la convertimos en matriz de numpy
-A = Adj1+np.transpose(Adj1)
-np.all(A==0)
-
-#iv. El grado medio (, en caso de red dirigida), el grado máximo y mínimo de la red
-#tomar la componente conexa más grande (CC max)
-R_P_1_ND=Red_proteinas_1.to_undirected() #R_P_1_ND la vuelve no dirigida
-largest_cc = max(nx.connected_components(R_P_1_ND), key=len) #set de nodos de la CC max
-smallest_cc = min(nx.connected_components(R_P_1_ND), key=len) #set de nodos de la CC min
+Inciso d)
 '''
-plt.figure()
-MCC=R_P_1_ND.subgraph(largest_cc) #crea una subgrafica con el conjuto largest_cc
-nx.draw_kamada_kawai(MCC, 
-        width = .5, # Ancho de los enlaces
-        node_color = 'green', # Color de los nodos
-        edge_color = 'red', # Color de los enlaces
-        node_size = 5, # Tamaño de los nodos
-        with_labels = False # True o False, Pone o no el nombre de los nodos
-       )
-plt.show()
+
+ne = pd.DataFrame(index = filename, columns = ['nodos','enlaces']) #Preparamos un dataframe para los nodos y enlaces
+
+contador = 0
+
+for file in filename:
+
+    ne.loc[file] = [grafos[contador].nodes(), grafos[contador].edges()]
+    
+    contador += 1
 
 plt.figure()
-SCC=R_P_1_ND.subgraph(smallest_cc) #crea una subgrafica con el conjuto largest_cc
-nx.draw_kamada_kawai(SCC, 
-        width = .5, # Ancho de los enlaces
-        node_color = 'green', # Color de los nodos
-        edge_color = 'red', # Color de los enlaces
-        node_size = 5, # Tamaño de los nodos
-        with_labels = False # True o False, Pone o no el nombre de los nodos
-       )
-plt.show()
-'''
-#v. La densidad de la red
-Densidad = nx.density(Red_proteinas_1)
-print('La densidad de la red es: ' + str(Densidad))
 
-#vi. Los coeficientes de clustering y CΔ de la red.
-print('El coeficientes de clustering promedio es: ' + str(nx.average_clustering(Red_proteinas_1))) #https://networkx.github.io/documentation/stable/reference/algorithms/generated/networkx.algorithms.cluster.average_clustering.html#networkx.algorithms.cluster.average_clustering
+nodos_venn = venn3([set(ne['nodos'][filename[0]]), set(
+    ne['nodos'][filename[1]]),
+    set(ne['nodos'][filename[2]])],
+    set_labels = ('yeast_AP-MS', 'yeast_LIT', 'yeast_Y2H'))
 
-#vii. Diámetro de la red
-#Diametro = nx.diameter(Red_proteinas_1) #The diameter function relies on a net being strongly connected. For a weakly connected graph one could use: Diametro = nx.diameter(Red_proteinas_1.to_undirected())
-# Solo me interesa la componente gigante
-Diametro = nx.diameter(largest_cc)
+plt.title('Diagrama de Venn (nodos)')
 
-print('El diámetro de la red es: ' + str(Diametro))
+#Descomentar lo siguiente si se desea guardar la figura como .png :
+#plt.savefig(path + '1d_nodos.png')
+
+plt.figure()
+
+nodos_venn = venn3([set(ne['enlaces'][filename[0]]), set(
+    ne['enlaces'][filename[1]]),
+    set(ne['enlaces'][filename[2]])],
+    set_labels = ('yeast_AP-MS', 'yeast_LIT', 'yeast_Y2H'))
+
+plt.title('Diagrama de Venn (enlaces)')
+
+#Descomentar lo siguiente si se desea guardar la figura como .png :
+#plt.savefig(path+ '1d_enlaces.png')
+
 
 
 #%%
@@ -682,7 +503,7 @@ prom=np.mean(steps)#18 pasos aprox.
 #                               PUNTO 3 
 ################################################################################
 
-
+# Red = nx.read_gml(drive_as_22july06_gml)
 
 """--------------------------------------------------------
 

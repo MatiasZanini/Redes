@@ -256,10 +256,281 @@ plt.title('Diagrama de Venn (enlaces)')
 #%%
 
 ################################################################################
+#                                 PAQUETES 
+################################################################################
+
+import networkx as nx
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import random
+import math
+# Evitar acumulación de mensajes de warning en el display
+import warnings  
+warnings.filterwarnings("ignore")
+
+
+#%%
+
+################################################################################
 #                               PUNTO 2 
 ################################################################################
 
+'''
+Inciso a)
+'''
+G = nx.read_gml('D:/Redes 2020/TC01_data/dolphins.gml')#Cargamos los nodos y enlaces
 
+with open('D:/Redes 2020/TC01_data/dolphinsGender.txt') as f:#Cargamos los géneros
+    
+    gender=f.readlines()
+
+for i in np.arange(len(gender)):
+    
+    gender[i]=gender[i].replace('\n','').split('\t')
+
+gender=dict(gender)#transformamos en un diccionario
+
+plt.figure('Original')
+nx.draw(G,labels=gender)
+plt.title('Original')
+plt.show()
+plt.close()
+
+plt.figure('Fruchterman Reingold')
+nx.draw(G, labels=gender,pos=nx.fruchterman_reingold_layout(G))
+plt.title('Fruchterman Reingold')
+plt.show()
+plt.close()
+
+plt.figure('Spring')
+nx.draw(G, labels=gender,pos=nx.spring_layout(G))
+plt.title('Spring')
+plt.show()
+plt.close()
+
+plt.figure('Circular')
+nx.draw(G, labels=gender,pos=nx.circular_layout(G))
+plt.title('Circular')
+plt.show()
+plt.close()
+
+plt.figure('Spectral')
+nx.draw(G, labels=gender,pos=nx.spectral_layout(G))
+plt.title('Spectral')
+plt.show()
+plt.close()
+
+'''
+En la mayoría de los layout testeados (exceptuando el circular y en menor grado el spectral), se distinguen dos
+grupo o clusters. Uno se encuentra compuesto principalemente por delfines de género masculino, mientras que 
+el otro presenta una heterogeneidad mayor entre los géneros, pero prevalecen los delfines femeninos. 
+También pueden verse enlaces entre ambos grupos, es decir que las comunidades están conectadas.
+En base a estas observaciones creemos que el layout "Spring" provee una visualización de la red que permite
+distinguir entre los dos grupos y la conexiones entre ellos.
+En este algoritmo, los enlaces actúan como resortes generando una fuerza atractiva entre nodos y 
+los nodos actuán como objetos que se repelen produciendo una fuerza repulsiva, este juego
+entre fuerzas continua hasta que los nodos alcazan porsiciones cercanas a las de equilibrio.
+'''
+#%%
+
+'''
+Inciso b)
+'''
+adj_real=nx.to_pandas_adjacency(G) #Matriz de adjacencia
+
+h=0
+
+for i in adj_real.index: #Calculamos la homofilia de la red, ignoramos el grupo NA del cual no sabemos el género
+    
+    for j in adj_real.columns:
+        
+        if i!=j and gender[i]!='NA' and gender[i]==gender[j] and adj_real[j][i]!=0:
+            h=h+1
+
+h_real=h/(2*G.number_of_edges()) #0.6037735849056604
+
+#Asignamos aleatoriamente el género a los nodos (manteniendo la cantidad original de f,m y NA)
+
+lista_N=[]#lista con el nombre de cada nodo
+
+lista_G=[]#lista con el género de cada nodo
+
+for i in gender:
+    
+    lista_N.append(i)
+    
+    lista_G.append(gender[i])
+
+distribucion=[] #Lista de valores de homofilia para la asignación aleatoria de género
+
+for n in np.arange(0,1000):
+    
+    copia_G=lista_G.copy()#Hacemos una copia de la lista de géneros para no modificar la real
+    
+    random.shuffle(copia_G)#Shuffleamos los géneros de forma aleatoria
+    
+    gender_rand = dict(zip(lista_N, copia_G)) #Generamos de nuevo el diccionario, esta vez con los generos shuffleados
+    
+    h=0
+    
+    for i in adj_real.index:
+        
+        for j in adj_real.columns:
+            
+            if i!=j and gender_rand[i]!='NA' and gender_rand[i]==gender_rand[j] and adj_real[j][i]!=0:
+                h=h+1
+                
+    h=h/(2*G.number_of_edges())
+    
+    distribucion.append(h)
+
+#Ploteamos los valores de homofilia que obtuvimos para cada asignación aleatoria
+
+plt.figure('Histograma genero random (1000)')
+plt.hist(distribucion,density=False,facecolor='blue', alpha=0.5, ec='black')
+plt.title('Histograma homofilia genero random (1000)')
+
+'''
+Observando la distribución de esta variable en la asignación aleatoria de género se puede ver que la mayoría
+de los valores se encuentran entre 0.42 y 0.47, es decir, podemos estimar que cuando no existe un vínculo entre
+la topología de la red y el género: h=0.44+-0.03.
+Debido a que h=0.6 (en la red real), podemos decir que esta red presenta homofilia.
+'''
+#Calculamos el valor medio esperado y el desvío standar para verificar o correjir la estimación:
+valor_medio=np.mean(distribucion)
+
+std=np.std(distribucion)
+
+#Calculamos el p-valor considerando la cantidad de veces que la homofilia dio mayor 
+#en el grafo shuffleado que en el real:
+
+count=0
+
+for i in distribucion:
+    
+    if i>=h_real:
+        count=count+1
+
+p=count/len(distribucion)
+
+'''
+Es posible que 1000 sean pocas iteraciones, probamos hacerlo con 10.000 y conseguimos p=0.0003. Con lo cual
+estimamos que p=O(10^-4).
+'''
+#%%
+
+'''
+Inciso c)
+
+Probamos eliminando aquellos nodos cuyo grado es menor teniendo en cuanta el género de cada nodo. Es decir, 
+como posteriormente vimos que la red presentaba homofilia queremos lograr separla en dos comunidades, una
+compuesta mayoritariamente por delfines de género masculino y otro mayoritariamanete por femeninos.
+'''
+
+G_copia=G.copy() #Hacemos una copia del grafo para no eliminar nodos del original
+
+grados=sorted(G_copia.degree, key=lambda x: x[1], reverse=False)#ordenamos los grados de menor a mayor
+
+for i,j in grados:
+    
+    vecinos=[n for n in G_copia.neighbors(i)]
+    
+    if gender[i]!='NA' and nx.is_connected(G_copia):#salteamos los que son de género desconocido
+        
+        for n in vecinos:
+            
+            if gender[i]!=gender[n] and G_copia.degree(i)<=G_copia.degree(n):#eliminamos si son de diferent género y el grado es menor
+                G_copia.remove_node(i)
+                break
+
+gender_2={}
+
+for i in G_copia.nodes:
+    
+    gender_2[i]=gender[i] 
+
+plt.figure()
+nx.draw(G_copia,labels=gender_2)
+plt.show()
+plt.close()
+
+tamanio=[len(c) for c in sorted(nx.connected_components(G_copia), key=len, reverse=True)]#[19, 16]
+
+pasos=G.number_of_nodes()-G_copia.number_of_nodes()#27
+
+#Eliminando nodos de forma aleatoria:
+
+tamanio_r=[]
+
+pasos_r=[]
+
+for n in np.arange(0,1000):
+    
+    print(n)
+    
+    G_r=G.copy()#de nuevo, hacemos una copia para no modificar el original
+    
+    nodos=list(G_r.nodes()).copy()
+    
+    random.shuffle(nodos)
+    
+    count=0
+    
+    for i in nodos:
+        
+        if nx.is_connected(G_r):
+            G_r.remove_node(i)
+            count=count+1
+    
+    pasos_r.append(count)
+    
+    tamanio_r.append([len(c) for c in sorted(nx.connected_components(G_r), key=len, reverse=True)])
+
+#Primero podemos descartar aquellos casos que quedaron con más de 2 componentes
+
+#Segundo podemos eliminar todos aquellos grupos que quedaron con órdenes de magnitud diferentes
+
+mayor_2=0
+
+pasos_r2=[]
+
+tamanio_r2=[]
+
+for i in np.arange(0,len(tamanio_r)):
+    
+    if len(tamanio_r[i])>2:
+        mayor_2=mayor_2+1
+    
+    elif math.floor(math.log(tamanio_r[i][0], 10))==math.floor(math.log(tamanio_r[i][1], 10)):
+        pasos_r2.append(pasos_r[i])
+        tamanio_r2.append(tamanio_r[i])
+
+#Grupos con componentes de diferentes órdenes de magnitud:
+
+total_1=len(tamanio_r)-len(pasos_r2)-mayor_2 #(75% aprox)
+
+print(mayor_2)#230 aprox (cambia un poco con la iteracion por el random) con longitud mayor que 2
+
+print(np.mean(pasos_r2))# 16 aprox
+
+diff=[]
+for i in tamanio_r2:
+    diff.append(abs(i[0]-i[1]))
+
+print(np.mean(diff))# 16 aprox
+'''
+De las 1000 interaciones realizadas (eliminando nodos de manera aleatoria) quedaron aproximadamente 20 (2%) 
+de los casos en los cuales la red se separó en componentes de tamaños del mismo orden. Si bien la red se separó
+en una cantidad de pasos menor que la no aleatoria (16 en promedio contra 27 del original) se puede ver que
+la diferencia entre los tamaños de las componentes también es superior (16 en promedio contra 3 del original).
+Tomando el p-valor como el inciso anterior p=0.02 (<0.05). En base a estos resultados, nos parece que la estrategia
+de eliminar secuencialmente los nodos de menor grado priorizando en eliminar aquellos nodos enlazados con
+nodos de diferente género otorga resultados mejores la eliminación azarosa aunque nos hubiese gustado encontrar
+una manera de separar la red con menor cantidad de pasos.
+'''
+
+#%%
 
 """#Ejercicio 2
 Considere la red social de 62 delfines de Nueva Zelanda (dolphins.txt).
@@ -320,183 +591,6 @@ sistemas autónomos de internet relevada a mediados de 2006.
 a. Encuentre gráficamente la distribución de grado Pk como función de k explorando diferentes alternativas: un bineado lineal o logarítmico, utilizando escalas logarítmicas o lineales en uno o ambos ejes. Discuta que alternativa permite apreciar mejor el carácter libre de escala de dicha distribución.
 
 b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha distribución
-
-*Comentario Debora:*
-*graficar con plt.bar pero que se va a ver mal, mejor con plt.scatter*
-
-"""
-
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import random
-#from scipy.stats import norm
-
-G = nx.read_gml('D:/Redes 2020/TC01_data/dolphins.gml')
-with open('D:/Redes 2020/TC01_data/dolphinsGender.txt') as f:
-    gender=f.readlines()
-lista_N=[]
-lista_G=[]
-for i in np.arange(len(gender)):
-    gender[i]=gender[i].replace('\n','').split('\t')
-    lista_N.append(gender[i][0])
-    lista_G.append(gender[i][1])
-gender=dict(gender)
-plt.figure('Original')
-nx.draw(G,labels=gender)
-plt.title('Original')
-plt.show()
-plt.close()
-plt.figure('Spring')
-nx.draw_spring(G, labels=gender)
-plt.title('Spring')
-plt.show()
-plt.close()
-plt.figure('Kamada Kawai')
-nx.draw_kamada_kawai(G,labels=gender)
-plt.title('Kamada Kawai')
-plt.show()
-plt.close()
-plt.figure('Circular')
-nx.draw_circular(G,labels=gender)
-plt.title('Circular')
-plt.show()
-plt.close()
-plt.figure('Spectral')
-nx.draw_spectral(G,labels=gender)
-plt.title('Spectral')
-plt.show()
-plt.close()
-#Medio que en todos menos el circular y un poco menos en el spectral se ven dos grupos/clusters/comunidades. Por un lado
-#uno de los clusters está compuesto principalmente por delfines de género masculino (con pocos femeninos) y
-#el otro presenta la situación opuesta.
-adj_real=nx.to_pandas_adjacency(G)
-h=0
-for i in adj_real.index:
-    for j in adj_real.columns:
-        if i!=j and gender[i]==gender[j] and adj_real[j][i]!=0:
-            h=h+1
-h_real=h/2*G.number_of_edges()
-#15264.0 (real)
-#asignacion aleatoria de género:
-distribucion=[]
-for n in np.arange(0,1000):
-    copia_G=lista_G.copy()#hago una copia para no modificar el real
-    random.shuffle(copia_G)
-    gender_rand = dict(zip(lista_N, copia_G))
-    h=0
-    for i in adj_real.index:
-        for j in adj_real.columns:
-            if i!=j and gender_rand[i]==gender_rand[j] and adj_real[j][i]!=0:
-                h=h+1
-    h=h/2*G.number_of_edges()
-    distribucion.append(h)
-
-#al final no voy a fitear con la gaussiana, lo dejo como comentado por si lo queremos agregar
-#sino lo borramos en la version final
-#mu, std = norm.fit(distribucion)#voy a fitear con una gaussiana
-plt.figure('Histograma genero random (1000)')
-plt.hist(distribucion,density=True,facecolor='blue', alpha=0.5, ec='black')#normalizado
-#xmin, xmax = plt.xlim()
-#x = np.linspace(xmin, xmax, 100)
-#p = norm.pdf(x, mu, std)
-#plt.plot(x, p, 'k', linewidth=1)
-plt.title('Histograma homofilia genero random (1000)')
-#A priori diría que sí hay homofilia.
-#Como estimación visual del valor medio, yo diría que está entre 10.500 y 12.000, podríamos decir 11.000+-1000
-#Para verificarlo pordemos hacer
-valor_medio=np.mean(distribucion)
-std=np.std(distribucion)
-#no sé muy bien como calcular el p-valor pero creo que es contar la cantidad de veces
-#que en la distribucion random te dio mayor a la real y dividirlo por el total:
-count=0
-for i in distribucion:
-    if i>h_real:
-        count=count+1
-p=count/len(distribucion)#p=0.0, es decir, no hay ningun caso en que la homofilia shuffleada supere la real
-
-#por lo que vimos en clase, podemos basarnos en el grado de los nodos: (en realidad lo vimos con overlap)
-#para una manera gradual, podríamos eliminar los enlaces con mayor grado (si no funciona probamos con overlap):
-#probé eso y no funcionó así que después probe sacando los de menor grado primero, que para mi tiene más sentido
-#y funca bárbaro pero da 46 pasos (elimina 46 nodos)
-
-#G_copia=G.copy()
-#grados=sorted(G_copia.degree, key=lambda x: x[1], reverse=False)
-#pasos=0
-#for i,j in grados:
-#    if nx.is_connected(G_copia):
-#        G_copia.remove_node(i)
-#        pasos=pasos+1
-#gender_2={}
-#for i in G_copia.nodes:
-#    gender_2[i]=gender[i]
-#nx.draw(G_copia,labels=gender_2)
-#comparo sacando nodos de forma random
-
-#ahora quiero probar teniendo en cuenta el genero tambien (funciona lindo también) y elimina 36 nodos
-#es decir que lo hace con menor cantidad de pasos. Yo iría con este
-G_copia=G.copy()
-grados=sorted(G_copia.degree, key=lambda x: x[1], reverse=False)
-adj_copia=nx.to_pandas_adjacency(G_copia)
-ind_col=[]
-for i,j in grados:
-    ind_col.append(i)
-df_orden=pd.DataFrame(index=ind_col,columns=ind_col)
-for i in adj_copia.index:
-    for j in adj_copia.columns:
-        df_orden[j][i]=adj_copia[j][i]
-for i in df_orden.index:
-    for j in df_orden.columns:
-        if i!=j and gender[i]==gender[j] and df_orden[j][i]!=0 and nx.is_connected(G_copia):
-            df_orden.drop(i,inplace=True)
-            df_orden.drop(columns=j, inplace=True)
-            G_copia.remove_node(i)
-            break
-gender_2={}
-for i in G_copia.nodes:
-    gender_2[i]=gender[i] 
-plt.figure()
-nx.draw(G_copia,labels=gender_2)
-tamanio=[len(c) for c in sorted(nx.connected_components(G_copia), key=len, reverse=True)]#[17, 9]
-pasos=G.number_of_nodes()-G_copia.number_of_nodes()#36
-
-
-#de forma aleatoria:
-tamanio_r=[]
-pasos_r=[]
-for n in np.arange(0,1000):
-    print(n)
-    G_r=G.copy()
-    nodos=list(G_r.nodes()).copy()
-    random.shuffle(nodos)
-    count=0
-    for i in nodos:
-        if nx.is_connected(G_r):
-            G_r.remove_node(i)
-            count=count+1
-    pasos_r.append(count)
-    tamanio_r.append([len(c) for c in sorted(nx.connected_components(G_r), key=len, reverse=True)])
-
-#primero podemos descartar aquellos casos que quedarons con más de 3 componentes
-#Después podemos ver todos los casos que quedaron que tienen tamaños "comparables" y ver la cantidad de pasos
-#que se dieron. 
-mayor_2=0
-steps=[]
-for i in np.arange(0,len(tamanio_r)):
-    if len(tamanio_r[i])>2:
-        mayor_2=mayor_2+1
-    elif tamanio_r[i][0]>2 and tamanio_r[i][1]>2:
-        steps.append(pasos_r[i])
-#grupos de tamaño 2 con 1 grupo de 1 o 2 nodos:
-total_1=len(tamanio_r)-len(steps)-mayor_2 #740 (75% aprox)
-#237 aprox con longitud mayor que 2
-plt.figure('Pasos')
-plt.hist(steps,density=False,facecolor='blue', alpha=0.5, ec='black')
-plt.title('Pasos')
-prom=np.mean(steps)#18 pasos aprox.
-
-
 #%%
 
 ################################################################################

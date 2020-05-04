@@ -10,13 +10,14 @@ Grupo: Camila Sanz, Matías Zanini, Debora Copa
 #                                 PAQUETES 
 ################################################################################
 
-import scipy.io as spio   #cargar matlab
 import pandas as pd       #DB
 import numpy as np        #matemática, simil maltab 
 import networkx as nx
 import matplotlib.pyplot as plt
 from matplotlib_venn import venn3
 import igraph as ig
+import random
+import math
 # Evitar acumulación de mensajes de warning en el display
 import warnings  
 warnings.filterwarnings("ignore")
@@ -251,25 +252,6 @@ plt.title('Diagrama de Venn (enlaces)')
 #Descomentar lo siguiente si se desea guardar la figura como .png :
 #plt.savefig(path+ '1d_enlaces.png')
 
-
-
-#%%
-
-################################################################################
-#                                 PAQUETES 
-################################################################################
-
-import networkx as nx
-import numpy as np
-import matplotlib.pyplot as plt
-import pandas as pd
-import random
-import math
-# Evitar acumulación de mensajes de warning en el display
-import warnings  
-warnings.filterwarnings("ignore")
-
-
 #%%
 
 ################################################################################
@@ -279,7 +261,10 @@ warnings.filterwarnings("ignore")
 '''
 Inciso a)
 '''
-G = nx.read_gml('D:/Redes 2020/TC01_data/dolphins.gml')#Cargamos los nodos y enlaces
+
+path = 'D:/Redes 2020/TC01_data/' #Colocar la ruta donde están guardados los archivos
+
+G = nx.read_gml( path + 'dolphins.gml')#Cargamos los nodos y enlaces
 
 with open('D:/Redes 2020/TC01_data/dolphinsGender.txt') as f:#Cargamos los géneros
     
@@ -530,68 +515,9 @@ nodos de diferente género otorga resultados mejores la eliminación azarosa aun
 una manera de separar la red con menor cantidad de pasos.
 '''
 
+
 #%%
 
-"""#Ejercicio 2
-Considere la red social de 62 delfines de Nueva Zelanda (dolphins.txt).
-
-a. Examine diferentes opciones de layout para este grafo e identifique la que le resulte más
-informativa. Justifique su elección detallando las características estructurales de la red
-que su elección pone en evidencia. Incluya en la representación gráfica de la red información sobre el sexo de los delfines.
-
-b. Se trata una red donde prevalece la homofilia en la variable género? Para responder
-
-i. Considere la distribución nula para la fracción de enlaces que vinculan géneros diferentes, generada a partir de al menos 1000 asignaciones aleatorias de género.
-
-ii. A partir de lo obtenido proponga una estimación para el valor y el error de dicha
-cantidad cuando no existe vínculo entre topolgía de la red medio y asignación de
-género. Compare su estimación con el valor medio esperado.
-
-iii. Estime la significancia estadística (p-valor) del valor observado en el caso de la
-red real.
-
-c. (*) Identifique alguna metodología basada en observables topológicos para eliminar
-nodos secuencialmente de la red de manera de dividirla en dos componentes de tamaños
-comparables en el menor número de pasos. Explique y muestre los resultados obtenidos.
-Intente cuantificar su estrategia comparándola con lo que se obtendría al eliminar nodos
-de manera aleatoria.
-
-
----------------------------------------------------------
-
-En este ejercicio se busca estudiar una población de delfines y tratar de entender cómo son los vínculos entre dicha población y si dichos vínculos tienen que ver con el sexo de los delfines. Basicamente, queremos entender si la población de delfines es homofílica
-##Inciso (a)
-La idea de este inciso es explorar las distintas posibilidades de layout que nos otorga networkx en función de determinar cuál es la mejor para dar cuenta de la estructura subyacente a la red.
-Existen múltilpes layouts, la idea es que probemos tres o cuatro. Algunos de ellos son: 'spring', 'random', 'circle'.
-La nomenclatura para aplicar cada uno de ellos sería:
-
-
-
-
-```
-# Habiendo importado las librerías networkx y matplotlib y habiendo generado los grafos basta con:
-nx.draw(Red_delfines, layout = 'layout_1')
-plt.show()
-nx.draw(Red_delfines, layout = 'layout_2')
-plt.show()
-nx.draw(Red_delfines, layout = 'layout_3')
-plt.show()
-```
-
-##Inciso (b)
-La idea de este inciso es estudiar si existe o no homofilia en la red de delfines. La idea es estudiar la fracción de enlaces, sobre el total, que vincule delfines del mismo sexo. Una posibilidad es contar por separado aquellos enlaces que vinculan macho con macho, con los de hembra con hembra. Lo importante es comprender que resulta necesario saber si este valor es grande o chico, saber con qué compararlo. Para eso es necesario repetir el cálculo anterior (averiguar fracción de enlaces entre mismo sexo) sobre redes aleatorias. Pero enteniendo aleatoriedad en el sentido de romper algunas de las relaciones existentes en la red real pero no todas. Por ejemplo, una posibilidad es asignar los géneros aleatoriamente entre los delfines, utilizando la distribución real de géneros. Otra posibilidad es recablear la red, manteniendo la distirbución de grado intacta. Para esta última alternativa existen funciones en networkx.
-
-##Inciso (c)*
-Este inciso es opcional, pero no por ello menos importante (a no preocuparse, que en otros TPs se pide lo mismo). La idea es encontrar una estrategia para romper la red en la menor cantidad de pasos posibles. Es decir, ir eliminando nodos, o enlaces, de manera iterativa, estudiando el tamaño de la componente gigante paso a paso. Las estrategias en este tipo de trabajos se basan en el concepto de centralidad de los nodos, o enlaces, en la red.
-
-# Ejercicio 3
-3) Considere la red as-22july06.gml creada por Mark Newman que contiene la estructura de los
-sistemas autónomos de internet relevada a mediados de 2006.
-
-a. Encuentre gráficamente la distribución de grado Pk como función de k explorando diferentes alternativas: un bineado lineal o logarítmico, utilizando escalas logarítmicas o lineales en uno o ambos ejes. Discuta que alternativa permite apreciar mejor el carácter libre de escala de dicha distribución.
-
-b. Utilizando funcionalidad de la librería igraph, estime el exponente de dicha distribución
-#%%
 
 ################################################################################
 #                               PUNTO 3 

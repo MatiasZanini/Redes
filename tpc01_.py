@@ -18,6 +18,7 @@ from matplotlib_venn import venn3
 import igraph as ig
 import random
 import math
+from sklearn import linear_model
 # Evitar acumulación de mensajes de warning en el display
 import warnings  
 warnings.filterwarnings("ignore")
@@ -705,8 +706,53 @@ plt.show()
 #                               PUNTO 4 
 ################################################################################
 
+'''
+Una primera aproximación para obtener una medida de esta propiedad es obteniendo la fracción de enlaces de la red cuyos
+extremos pertenecen a la misma categoría. Sin embargo esta medida es en cierta forma incompleta, ya que para casos triviales
+(sólo nodos de un mismo tipo) obtendremos un valor alto. Por lo cual es conveniente sustraer de este valor la asortatividad
+que se esperaría para una red independiente de la categoría.
 
+Muchas veces nos interesan características escalares de los nodos (con valores ordinales), como por ejemplo el grado. 
+El grado de un nodo  k_i , es una medida que en sí misma nos da información de la importancia de los nodos y de la 
+estructura de la red. Por ejemplo pensando en la centralidad de un nodo, para el caso de las citas que recibe un artículo 
+científico, es más importante cuanto más citado (conectado) está. Sin embargo, en algunos casos puede resultar de interés 
+considerar el grado de centralidad de los vecinos de este nodo, ya que si estos también son centrales, éste resulta de 
+mayor importancia. Esto da lugar a características interesantes de la distribución de los nodos en la red.
 
+Modelo Barabasi
+Una forma de estudiar la asortatividad es mediante un gráfico que muestre la tendencia entre el grado promedio de los nodos 
+vecinos  k_(nn) (k)  a los nodos de grado  k  en función de la secuencia de los grados. Si la tendencia de esta curva puede 
+aproximarse con una ley de potencia se puede describir muy bien con la ecuación de Barabasi que indica:
+
+k_nn[k] = a.k^μ 
+
+O bien en su forma logarítmica (la cual permite hacer un ajuste lineal ya que la ley de potencia tiene una tendencia 
+exponencial decreciente)
+
+log(k_(nn) [k]) = log(a) + μ.log(k) 
+
+Modelo Newman
+Otra forma de obtener la asortatividad de grado de los nodos de la red es mediante un coeficiente, que deberá obtenerse en 
+forma distinta a la asortatividad por categorías. En este tipo de casos intentar obtener el valor de la asortatividad en 
+forma similar al caso de características sin orden (agrupando en bins por rangos de grado), nos llevaría al error de 
+considerar características totalmente diferentes (o totalmente iguales) entre grupos, cuando en realidad no lo son y 
+perderíamos así también la cercanía de los elementos entre grupos. Es por ello que se prefiere usar la covarianza 
+cov (k_i, k_j)  como medida representativa de enlaces que unen a los nodos  i,j  donde  k_i  y  k_j  son variables 
+aleatorias que representan el valor de el grado de cada nodo. Si normalizamos respecto a la máxima covarianza (es decir 
+cuando  k_i = k_j ), obtendremos la fórmula definida por Newman del coeficiente de asortatividad  r  (equivalente a la 
+correlación de Pearson).
+
+r = ∑_(ij) (A_(ij) − k_i k_j/2m)k_i k_j / ( ∑_(ij) (k_i δ_(ij) − k_i k_j/2m)k_i k_j ) 
+
+En este caso obtendremos valores positivos de correlación cuando los pares de nodos de la red tengan en general grados 
+parecidos (asortativo) y valores negativos cuando los nodos se unen a otros con grados muy diferentes (disasortatividad) 
+Esta medida de asortatividad nos da cuenta también de las características estructurales de la red. Por ejemplo, se esperan 
+redes asortativas en las redes sociales, donde la gente se relaciona con sus parecidos y forman grupos. Debido a esto se 
+generan distribuciones de alto grado muy concentradas en un núcleo y rodeado de una periferia poco densa.
+
+Para casos de redes disasortativas se generan enlaces entre nodos de grados muy diferentes creando estructuras del tipo 
+estrella, con una estructura más uniforme a lo largo de toda la red.
+'''
 
 
 

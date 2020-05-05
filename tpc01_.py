@@ -253,6 +253,22 @@ plt.title('Diagrama de Venn (enlaces)')
 #Descomentar lo siguiente si se desea guardar la figura como .png :
 #plt.savefig(path+ '1d_enlaces.png')
 
+'''
+En los diagramas de venn podemos ver que hay poca coherencia entre las redes. Podemos atribuir la falta
+de coherencia a la naturaleza de las mismas. Por un lado en la red Y2H se encuentran enlazadas 
+aquellas proteínas que interactuan entre sí, sin embargo, esta interacción puede no darse en el organismo 
+del cual provienen. Además estos experimentos se estudian en el núcleo de la levadura 
+y muchas proteínas no llegan al mismo. Por otro lado el método para generar la red AP-MS presenta 
+el inconveniente de los complejos proteícos (proteínas que pueden adosarse a otras pero que no presentan 
+relación funcional con las mismas). Por último la red de proteínas LIT, basada en las referencias 
+bibliográficas puede presentar muchas contradicciones en sí misma, por ejemplo, un paper podría contener 
+la información de que la proteína X e Y son opuestas y apreceran enlazadas en el grafo. 
+Mientras que otro paper puede contener la información de X-Z cumplen la misma función y nuevamente 
+apareceran enlazadas.
+La red Y2H es la que presenta mayor cobertura con respecto a la cantidad de proteínas mientras que la
+red AP-MS presenta mayor cobertura respecto a los enlaces.
+'''
+
 #%%
 
 ################################################################################
@@ -335,7 +351,7 @@ for i in adj_real.index: #Calculamos la homofilia de la red, ignoramos el grupo 
             h=h+1
 
 h_real=h/(2*G.number_of_edges()) #0.6037735849056604
-
+print('Homofilia de la red: '+str(h_real))
 #Asignamos aleatoriamente el género a los nodos (manteniendo la cantidad original de f,m y NA)
 
 lista_N=[]#lista con el nombre de cada nodo
@@ -376,6 +392,8 @@ for n in np.arange(0,1000):
 plt.figure('Histograma genero random (1000)')
 plt.hist(distribucion,density=False,facecolor='blue', alpha=0.5, ec='black')
 plt.title('Histograma homofilia genero random (1000)')
+plt.show()
+plt.close()
 
 '''
 Observando la distribución de esta variable en la asignación aleatoria de género se puede ver que la mayoría
@@ -385,8 +403,10 @@ Debido a que h=0.6 (en la red real), podemos decir que esta red presenta homofil
 '''
 #Calculamos el valor medio esperado y el desvío standar para verificar o correjir la estimación:
 valor_medio=np.mean(distribucion)
+print('Valor medio: '+str(valor_medio))
 
 std=np.std(distribucion)
+print('Error: '+str(std))
 
 #Calculamos el p-valor considerando la cantidad de veces que la homofilia dio mayor 
 #en el grafo shuffleado que en el real:
@@ -399,6 +419,7 @@ for i in distribucion:
         count=count+1
 
 p=count/len(distribucion)
+print('P valor: '+str(p))
 
 '''
 Es posible que 1000 sean pocas iteraciones, probamos hacerlo con 10.000 y conseguimos p=0.0003. Con lo cual
@@ -442,8 +463,10 @@ plt.show()
 plt.close()
 
 tamanio=[len(c) for c in sorted(nx.connected_components(G_copia), key=len, reverse=True)]#[19, 16]
+print('Tamaño de las componentes: '+str(tamanio))
 
 pasos=G.number_of_nodes()-G_copia.number_of_nodes()#27
+print('Cantidad de pasos: '+str(pasos))
 
 #Eliminando nodos de forma aleatoria:
 
@@ -452,8 +475,6 @@ tamanio_r=[]
 pasos_r=[]
 
 for n in np.arange(0,1000):
-    
-    print(n)
     
     G_r=G.copy()#de nuevo, hacemos una copia para no modificar el original
     
@@ -496,15 +517,17 @@ for i in np.arange(0,len(tamanio_r)):
 
 total_1=len(tamanio_r)-len(pasos_r2)-mayor_2 #(75% aprox)
 
-print(mayor_2)#230 aprox (cambia un poco con la iteracion por el random) con longitud mayor que 2
-
-print(np.mean(pasos_r2))# 16 aprox
+print('Resultados de la eliminación aleatoria de nodos:')
+print('Iteraciones con componentes de diferentes órdenes de magnitud: '+str(total_1))
+print('Iteraciones con más de 2 componentes: ' + str(mayor_2))
+print('Promedio de pasos realizados para las iteraciones con 2 componentes de igual orden: '+str(np.mean(pasos_r2)))# 16 aprox
 
 diff=[]
 for i in tamanio_r2:
     diff.append(abs(i[0]-i[1]))
 
-print(np.mean(diff))# 16 aprox
+print('Diferencia promedio entre las componentes del mismo orden:' +str(np.mean(diff)))# 16 aprox
+
 '''
 De las 1000 interaciones realizadas (eliminando nodos de manera aleatoria) quedaron aproximadamente 20 (2%) 
 de los casos en los cuales la red se separó en componentes de tamaños del mismo orden. Si bien la red se separó
@@ -721,7 +744,7 @@ mayor importancia. Esto da lugar a características interesantes de la distribuc
 
 Modelo Barabasi
 Una forma de estudiar la asortatividad es mediante un gráfico que muestre la tendencia entre el grado promedio de los nodos 
-vecinos  k_(nn) (k)  a los nodos de grado  k  en función de la secuencia de los grados. Si la tendencia de esta curva puede 
+vecinos  k_(nn)(k) a los nodos de grado  k  en función de la secuencia de los grados. Si la tendencia de esta curva puede 
 aproximarse con una ley de potencia se puede describir muy bien con la ecuación de Barabasi que indica:
 
 k_nn[k] = a.k^μ 
@@ -753,9 +776,281 @@ generan distribuciones de alto grado muy concentradas en un núcleo y rodeado de
 Para casos de redes disasortativas se generan enlaces entre nodos de grados muy diferentes creando estructuras del tipo 
 estrella, con una estructura más uniforme a lo largo de toda la red.
 '''
+#%%
+# FUNCIONES
+
+################################################################################
+#    Función definida al inicio del script
+################################################################################
+def abrir_txt(lista_de_enlaces_txt):
+    archivo=open(lista_de_enlaces_txt)
+    data=[]
+    for linea in archivo:
+        linea=linea.strip()
+        columna=linea.split()
+        data.append(columna)    
+    return data
+
+################################################################################
+#     obtener tabla de grados y matriz de adyacencias para archivos txt
+################################################################################
+def gettxt(txtfile):
+
+  # leemos la red txt de la ruta y archivo esepcificado en datafile
+  lista_de_enlaces_ = abrir_txt(txtfile)
+
+  # Tabla de Grados 
+  Red = nx.Graph()
+  Red.add_edges_from(lista_de_enlaces_) #lista_de_enlaces_ es la que obtuvimos aplicando la función abrir_txt a alguno de los .txt. En networkx, no es necesario agregar primero los nodos y luego los enlaces. Podemos pasar los enlaces y agrega los nodos automáticamente.
+
+  grados = Red.degree()                   # devuelve grado de cada nodo, como diccionario
+  df_k = pd.DataFrame.from_dict(grados)   # convertimos diccionario en data frame
+  df_k.columns = ['Nodos', 'Grado']       # definimos nombres de columnas
+  
+  # Matriz de adyacencias 
+  matriz_adyacencia = nx.to_pandas_adjacency(Red) # devuelve matriz de adyacencia como dataframe de la libreria pandas
+  A = matriz_adyacencia.to_numpy()  # la convertimos en matriz de numpy por si queremos hacer cuentas
+  # retorna la red especificado en la ruta y archivo esepcificado en datafile
+  return df_k, A
+
+################################################################################
+#      obtener tabla de grados y matriz de adyacencias para archivos gml
+################################################################################
+def getgml(filename):
+
+  # extraemos el archivo con la red
+  Red = nx.read_gml(filename)
+      
+  # Tabla de Grados 
+  grados = Red.degree()                   # devuelve grado de cada nodo, como diccionario
+  df_k = pd.DataFrame.from_dict(grados)   # convertimos diccionario en data frame
+  df_k.columns = ['Nodos', 'Grado']       # definimos nombres de columnas
+
+  # Matriz de adyacencias 
+  matriz_adyacencia = nx.to_pandas_adjacency(Red) # devuelve matriz de adyacencia como dataframe de la libreria pandas
+  A = matriz_adyacencia.to_numpy()                # la convertimos en matriz de numpy por si queremos hacer cuentas
+
+  # retorna la red GML especificado en la ruta y archivo esepcificado en datafile
+  return df_k, A
 
 
+################################################################################
+#                obtner grados promedio de vecinos para cada grado
+################################################################################
+def getknn(df_k, A):
+
+  Knn = np.zeros(len(df_k))   # inicialización de grados promeio de vecinos
+
+  # iteramos para cargar el grado promedio de vecinos a cada nodo i
+  for i in range(0,len(df_k)):
+    nn_i = A[i,:]==1                        # vector boolean de nodos conectados a i,
+    Knn[i] = df_k[nn_i]["Grado"].mean()     # grado promedio de los vecinos al nodo i
+
+  df_k['Knn promedio'] = Knn                # Nueva columna
+  Knn_prom = df_k.groupby(['Grado']).mean() # promedio de los Knn para mismo grado 
+  Knn_prom.index.name = 'Grado'
+  Knn_prom.reset_index(inplace=True)
+  
+  return Knn_prom
 
 
+################################################################################
+#    Regrsión lineal para estimar los parametros 'a' y 'mu' del modelo Barabasai
+################################################################################
+def knn_barabasai(Knn_prom):
+
+  # definimos el grado y Knn logaritmicamente para obtener una relación lineal 
+  # Knn = a*K^mu   --- log -->   log(Knn) = log(a) + mu * log(K)
+  logk = np.log(Knn_prom['Grado'].values)
+  logknn = np.log(Knn_prom['Knn promedio'].values)
+  M = np.vstack([logk, np.ones(len(logk))]).T
+
+  #Solves the equation A x = b by computing a vector x that minimizes the squared Euclidean 2-norm || b - A x ||^2_2
+  mu, loga = np.linalg.lstsq(M, logknn, rcond=None)[0]   #a = exp(loga)
+
+  return mu, loga, logk, logknn
 
 
+################################################################################
+#                              Modelo Newman
+################################################################################
+# calculo de coeficiente de newman
+
+def r_newman(df_k, A):
+
+  # vector de grados para distintas potencias
+  k = np.asarray(df_k["Grado"], dtype=np.float )
+  k2 = k**2
+  k3 = k**3
+
+  # Sumas parciales
+  S1 = np.sum(k)
+  S2 = np.sum(k2)
+  S3 = np.sum(k3)
+  Se = (k.dot(A)).dot(k)
+
+  # coeficiente de newman
+  r = ( S1*Se - S2**2 ) / ( S1*S3 - S2**2)
+
+  return r
+
+
+#ruta donde se encuentran los archivos descargados:
+path='D:/Redes 2020/TC01_data/'
+
+papers = path+'netscience.gml'# netscience_gml
+
+internet = path+'as-22july06.gml'# as22july06_gml
+
+proteinas1 = path+'yeast_Y2H.txt'# yeast_Y2H_txt
+
+proteinas2 = path+'yeast_AP-MS.txt'# yeast_AP_MS_txt
+
+#%%
+
+'''
+Por practicidad, este ejercicio lo hicimos iterando sobre todas las redes e imprimiendo los
+resultados en la consola. Los análisis y comentarios se encuentran al final del script.
+'''
+# iterar sobre todas las redes de ejemplo
+for n in range(0,4):
+
+  # Seleccionar red
+  if n==0: 
+    redsel = 'Internet'
+    redfile = 'as-22july06.gml'
+    item = 'a'
+    filename = internet 
+    df_k, A = getgml(filename) 
+  elif n==1:
+    redsel = 'Papers'
+    redfile = 'netscience.gml'
+    item = 'a'
+    filename = papers 
+    df_k, A = getgml(filename) 
+  elif n==2:
+    redsel = 'Proteinas1'
+    redfile = 'yeast_Y2H.txt'
+    item = 'b'
+    filename = proteinas1 
+    df_k, A = gettxt(filename)  
+
+  elif n==3:
+    redsel = 'Proteinas2'
+    redfile = 'yeast_AP-MS.txt'
+    item = 'b'
+    filename = proteinas2
+    df_k, A = gettxt(filename)  
+
+  #Inciso i)
+  # obtenemos la tabla de grados y matriz de adyacencias de la red
+  #df_k, A = getnet(filename)  
+
+  print('******************************************************************************')
+  print(' Ejercicio 4 (' + item + '): Red de ' + redsel + ' (' + redfile + ')' )
+  print('******************************************************************************')
+  # obtenemos los grados de vecinos promedio
+  Knn_prom = getknn(df_k, A) 
+  Knn_prom = Knn_prom.drop([0]) # eliminamos los grados 0
+
+  #Inciso ii)
+  # graficamos los grados de vecinos promedio
+  
+  print(redsel + ' a-ii) Grado promedio de vecindad para nodos de cierto grado (Knn)')
+  Knn_prom.plot(x='Grado', y='Knn promedio', style='o')  
+  plt.title('Grado vs Knn promedio')  
+  plt.xlabel('Grado')  
+  plt.ylabel('Knn promedio')  
+  plt.show()
+
+  #Inciso iii)
+  #obtenemos los parametros de Knn mediante el estimador de Barabasai
+  
+  mu, loga, logk, logknn = knn_barabasai(Knn_prom)
+  a = np.exp(loga) # parametro 'a' en escala lineal
+
+  # curva del estimador de barabasai
+  Knn_barab = loga + mu * logk 
+
+  # grafico de los puntos obtenidos de la red y el ajuste lineal
+  print(redsel +' a-iii) Parámetros Barabasai estimados:\na = ' + str(a) + '\nmu = ' + str(mu))
+
+  plt.plot(logk, logknn, 'o', label='Original data', markersize=5)
+  plt.plot(logk, Knn_barab, 'r', label='Fitted line')
+  plt.legend()
+  plt.title('Grado vs Knn promedio')  
+  plt.xlabel('log(Grado)')  
+  plt.ylabel('log(Knn_promedio)')  
+  plt.show()
+  
+  #Inciso iv)
+  #parametros estimados
+
+  r = r_newman(df_k, A)
+  print(redsel + ' a-iv) Parámetro de newman (r): ' + str(r) + '\n')
+
+#%%
+'''
+Gráfico de la red de colaboraciones científicas 
+'''
+
+Red = nx.read_gml(papers)
+plt.figure() 
+nx.draw_kamada_kawai(Red, 
+
+        width = .5, # Ancho de los enlaces
+        node_color = 'blue', # Color de los nodos
+        edge_color = 'violet', # Color de los enlaces
+        node_size = 5, # Tamaño de los nodos
+        with_labels = False # True o False, Pone o no el nombre de los nodos
+       )
+plt.title('Red de colaboraciones científicas')
+
+#%%
+'''
+En términos generales, se puede verificar que existe una relación entre la tendencia de la curva  Knn(k)  
+y el coeficiente de Newman  r , notando que éste resulta positivo para tendencias positivas de la curva, 
+mostrando la asortatividad, mientras que para tendencias negativas el coeficiente de Newman resulta también negativo, 
+indicando disarsotatividad en ese caso.
+
+Red de Internet:
+Observamos que la curva Knn(k) posee un decaimiento exponencial, lo cual indica una tendencia negativa 
+y por lo tanto la disasortatividad.
+La mayoría de los nodos tienen un grado bajo y unos pocos nodos en la cola de la curva de grado alto que se conectan 
+sólo con nodos de grado bajo. También se puede observar la misma curva pero en escala logarítmica (ambos ejes) y 
+la recta cuya ordenada al origen es  log(a) (a=575.7) y pendiente mu=−0.44 ,
+Por otro lado el cálculo del coeficiente  r  arroja un valor negativo de  r=−0.198 , 
+corroborandose la correlación negativa entre los grados de los nodos de la red. 
+En este caso se esperaría una estructura del grafo de la red de internet en forma de estrella.
+
+Red de colaboraciones científicas:
+Para el caso de la red de colaboraciones científicas, en la curva  Knn(k) se puede apreciar que existen nodos de grado 
+bajo que se relacionan en general con sus parecidos, lo cual indica la asortatividad, sin embargo luego 
+del grado k=10 esta relación deja de valer y los nodos de la red se conectan con nodos de grado diferente 
+aunque con una leve tendencia creciente pero mucho menos asortativa. 
+En este ejemplo se obtuvieron como parámetros de ajuste lineal (que no es el mejor modelo de ajuste en este caso) 
+con  a=3.55  y  mu=0.30 . Luego, el coeficiente de Newman resulta también positivo r=0.46. 
+Por lo tanto se pueden encontrar redes asortativas, no solo en los casos de redes sociales, 
+mostrando que las publicaciones tienden a citar artículos de su mismo campo (están agrupados).
+
+Red de proteinas (yeast_Y2H.txt)
+La curva  Knn(k)  muestra una tendencia negativa, por lo tanto disasortativa, aunque muy dispersa. 
+Según este gráfico, podemos pensar en que esta dispersión muestra que muchos nodos de grado alto se conectan con 
+nodos de grado alto y bajo y viceversa. Por lo cual la ley de potencias no da suficiente información en este caso 
+más que una idea de una leve disasortatividad, cuyos parámetros del ajuste lineal resultan a=17,58 y mu=-0,2. 
+Podemos sin embargo observar que la baja correlación de la asortatividad de la red se manifiesta con un coeficiente 
+de Newman muy bajo, arrojando un valor de r=-0.05.
+Respecto a la estructura de la red puede verse que los nodos están más conectados no formándose el conglomerado central 
+tan marcado como en el otro caso.
+
+Red de proteinas (yeast_AP_MS.txt)
+La curva  Knn(k)  muestra una tendencia marcadamente positiva, mostrando que es asortativa, ya que se observan 
+nodos de grado bajo que se conectan con nodos de grado alto por lo menos hasta el grado 70 aproximadamente, 
+luego esa tendencia baja levemente, pero se mantiene positiva si se considera todo el conjunto. 
+En el ajuste lineal sobre esta curva, que también se muestra en escala logarítmica, se obtienen a=4.47 y mu=0.6. 
+Por el lado del coeficiente de Newman, se puede apreciar una alta correlación positiva r=0.6, 
+verificando su comportamiento asortativo. En este caso al observar la estructura se puede ver claramente 
+un grupo de alta densidad cerca del centro
+
+'''
+#%%

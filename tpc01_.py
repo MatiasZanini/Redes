@@ -57,7 +57,7 @@ Inciso a)
 
 
 #ruta donde se encuentran los archivos descargados:
-path = 'C:/Users/Mati/Documents/GitHub/Redes/tc1 data/'
+path = 'D:/Redes 2020/TC01_data/'
 
 #lista con los nombres de los archivos:
 filename = ['yeast_AP-MS','yeast_LIT','yeast_Y2H']
@@ -88,9 +88,6 @@ for G in grafos:
     
     contador +=1
     
-    
-    #plt.figure()
-   # axis[contador-1].plot(1, len(grafos), contador)
     axis[contador-1].set_title(filename[contador-1], fontsize = 16)
     
     nx.draw(G, 
@@ -103,10 +100,6 @@ for G in grafos:
         )
 
 plt.show()    
-#Descomentar lo siguiente si se quiere guardar la figura en formato png:
-#plt.savefig(path+'1a_comparacion_grafica.png')
-    
-
 
 #%%
 
@@ -152,14 +145,14 @@ for file in filename:
     
 print(df)
 
-#Descomentar lo siguiente si se desea guardar el archivo con la tabla en formato .csv :
-#df.to_csv(path + '1b.csv')
 
 #%%
 '''
 En cuanto a si la red es dirigida o no, podemos basarnos en la matriz de adyacencia. Si la misma es simétrica, resulta
 natural considerar la red como no dirigida, dado que no se tiene en cuenta el sentido de sus enlaces.
-Por lo tanto, chequeamos que las 3 redes son simétricas a partir de su matriz de adyacencia:
+Sin embargo suponemos que como creamos las redes sabiendo que la naturaleza de las mismas era no dirigida,
+suponemos que las matrices de adyacencia que calculemos con la librería también darán simétricas.
+Por completitud del ejercio, chequeamos que las 3 redes son simétricas a partir de su matriz de adyacencia:
 '''
 
 matrices = []
@@ -191,22 +184,25 @@ Inciso c)
 La estructura de las redes es similar en todos los casos. Se encuentra una componente gigante de proteínas de
 levadura y varias componentes más pequeñas. 
 
-En terminos de nodos, la red Y2H tiene aproximadamente 500 más que las otras.
-Se puede observar que en la red AP-MS, donde los enlaces se adjudican si dos proteínas interactúan entre sí, 
-la cantidad de enlaces y el grado medio <k> es superior a los de los demás. Lo mismo ocurre con su grado máximo. 
-Por otro lado, la densidad resulta ser similar entre las 3 redes, siendo la AP-MS un poco superior.
-Esto era esperable tras observar que posee el mayor grado medio y la mayor cantidad de enlaces. 
+En términos de nodos, la red Y2H tiene aproximadamente 500 más que las otras.
+Se puede observar en la red AP-MS que la cantidad de enlaces, el grado medio <k> y su grado máximo es superior 
+a los de los demás. Esto puede deberse al método utilizado para generar la red AP-MS que presenta el 
+inconveniente de los complejos proteícos (proteínas que pueden adosarse a otras pero que no presentan 
+relación funcional con las mismas). Por otro lado, la red Y2H tiene un grado máximo superior y un grado
+promedio inferior a la red LIT lo cual indica que la red bibliográfica presenta mayor homogeneidad con repecto
+a la distribución de enlaces por nodo.
 
-El coeficiente de clustering mustra que hay mayor cantidad de nodos que cumplen la clausura transitiva en la AP-MS.
-Esto quiere decir que, si la proteína X interactúa con la proteína Y y la Z, es probable que las proteínas Y y Z
-interactúen entre sí. Para la red LIT, vemos que el coeficiente de clustering es menor (aproximadamente 1/3 o 1/4 de 
-los nodos cumplen clausura transitiva). Una posibilidad es que esto ocurra debido a que una proteína puede
-cumplir más de una función. Luego, aquellas proteínas cuyos vecinos cumplen diferentes funciones, no se enlazan
-entre sí.
-Por último el menor coeficiente de clustering se halla en la red LIT. Esto quiere decir que, si
-las proteínas X-Y aparecen en un paper y X-Z aparece en otro, no necesariamente la probabilidad de que 
-Y-Z aparezcan en otro paper es grande. Esto puede deberse principalmente a que los papers pueden estar hablando
-de diferentes temáticas. Algo similar se puede deducir del coeficiente de clustering global.
+La densidad es similar en las 3 redes, siendo la red AP-MS ligeramente superior.
+
+El coeficiente de clustering muestra que hay mayor cantidad de nodos que cumplen la clausura transitiva en 
+la AP-MS, lo cual puede explicarse considerando que la red enlaza las proteínas si cumplen la misma función,
+con lo cual si la proteína X presenta la misma relación funcional que la Y y la Z, entonces la Y y la Z también 
+cumplirán la misma función. La red Y2H presenta el menor índice de clustering, lo cual indica que
+si la proteína X interactúa con la Y y la Z, es probable que la Y-Z no interactúen entre sí.
+La red LIT presenta un índice de clustering intermedio entre las dos redes, a priori, no se pueden estimar
+muchos parámetros de esta red dado que depende de la temática de cada paper considerado para armarla.
+
+Un análisis similar se aplica al coeficiente de clustering global.
 
 En cuanto al diámetro de las redes, dado que las mismas no son conexas, se tomó por convención que su diametro
 es infinito.
@@ -238,9 +234,6 @@ nodos_venn = venn3([set(ne['nodos'][filename[0]]), set(
 
 plt.title('Diagrama de Venn (nodos)')
 
-#Descomentar lo siguiente si se desea guardar la figura como .png :
-#plt.savefig(path + '1d_nodos.png')
-
 plt.figure()
 
 nodos_venn = venn3([set(ne['enlaces'][filename[0]]), set(
@@ -250,21 +243,17 @@ nodos_venn = venn3([set(ne['enlaces'][filename[0]]), set(
 
 plt.title('Diagrama de Venn (enlaces)')
 
-#Descomentar lo siguiente si se desea guardar la figura como .png :
-#plt.savefig(path+ '1d_enlaces.png')
-
 '''
-En los diagramas de venn podemos ver que hay poca coherencia entre las redes. Podemos atribuir la falta
+En los diagramas de Venn se observa que hay poca coherencia entre las redes. Podemos atribuir la falta
 de coherencia a la naturaleza de las mismas. Por un lado en la red Y2H se encuentran enlazadas 
 aquellas proteínas que interactuan entre sí, sin embargo, esta interacción puede no darse en el organismo 
 del cual provienen. Además estos experimentos se estudian en el núcleo de la levadura 
 y muchas proteínas no llegan al mismo. Por otro lado el método para generar la red AP-MS presenta 
-el inconveniente de los complejos proteícos (proteínas que pueden adosarse a otras pero que no presentan 
-relación funcional con las mismas). Por último la red de proteínas LIT, basada en las referencias 
-bibliográficas puede presentar muchas contradicciones en sí misma, por ejemplo, un paper podría contener 
-la información de que la proteína X e Y son opuestas y apreceran enlazadas en el grafo. 
-Mientras que otro paper puede contener la información de X-Z cumplen la misma función y nuevamente 
-apareceran enlazadas.
+el inconveniente de los complejos proteícos (mencionado anteriormente). 
+Por último la red de proteínas LIT, basada en las referencias bibliográficas puede presentar muchas 
+contradicciones en sí misma, por ejemplo, un paper podría contener la información de que la proteína X e Y 
+son opuestas y apreceran enlazadas en el grafo. Mientras que otro paper puede contener la información de 
+X-Z cumplen la misma función y nuevamente apareceran enlazadas.
 La red Y2H es la que presenta mayor cobertura con respecto a la cantidad de proteínas mientras que la
 red AP-MS presenta mayor cobertura respecto a los enlaces.
 '''
@@ -324,15 +313,20 @@ plt.show()
 plt.close()
 
 '''
-En la mayoría de los layout testeados (exceptuando el circular y en menor grado el spectral), se distinguen dos
-grupo o clusters. Uno se encuentra compuesto principalemente por delfines de género masculino, mientras que 
-el otro presenta una heterogeneidad mayor entre los géneros, pero prevalecen los delfines femeninos. 
+En la mayoría de los layout testeados (exceptuando el "Circular" y en menor grado el "Spectral"), 
+se distinguen dos grupos o clusters. Uno se encuentra compuesto principalemente por delfines de género 
+masculino, mientras que el otro presenta una heterogeneidad mayor entre los géneros, pero prevalecen los femeninos. 
 También pueden verse enlaces entre ambos grupos, es decir que las comunidades están conectadas.
 En base a estas observaciones creemos que el layout "Spring" provee una visualización de la red que permite
 distinguir entre los dos grupos y la conexiones entre ellos.
-En este algoritmo, los enlaces actúan como resortes generando una fuerza atractiva entre nodos y 
+En este algoritmo, los enlaces actúan como resortes generando una fuerza atractiva entre los nodos y 
 los nodos actuán como objetos que se repelen produciendo una fuerza repulsiva, este juego
-entre fuerzas continua hasta que los nodos alcazan porsiciones cercanas a las de equilibrio.
+entre fuerzas continua hasta que los nodos alcazan posiciones cercanas a las de equilibrio.
+Otro layout cuyo algoritmo funciona de forma similar al de "Spring" es "Fruchterman Reingold" que también
+permite visualizar los dos grupos de la red.
+Comentario: En estos layouts las posiciones inciales de los nodos no están totalmente determinados (aunque pueden
+fijarse), con lo cual la visualización del grafo puede presentar ligeras variaciones en cada iteración, sin
+embargo, observamos que casi siempre pueden distinguirse los dos clusters.
 '''
 #%%
 
@@ -396,7 +390,8 @@ plt.show()
 plt.close()
 
 '''
-Observando la distribución de esta variable en la asignación aleatoria de género se puede ver que la mayoría
+Comentario: Ignoramos los casos de delfines etiquetados como NA dado que desconocemos el género de los mismos.
+Observando la distribución de la homofilia en la asignación aleatoria de género se puede ver que la mayoría
 de los valores se encuentran entre 0.42 y 0.47, es decir, podemos estimar que cuando no existe un vínculo entre
 la topología de la red y el género: h=0.44+-0.03.
 Debido a que h=0.6 (en la red real), podemos decir que esta red presenta homofilia.
@@ -422,8 +417,9 @@ p=count/len(distribucion)
 print('P valor: '+str(p))
 
 '''
-Es posible que 1000 sean pocas iteraciones, probamos hacerlo con 10.000 y conseguimos p=0.0003. Con lo cual
-estimamos que p=O(10^-4).
+Es posible que, en este caso, 1000 sean pocas iteraciones. Por ello probamos calcular la homofilia del grafo
+para 10.000 iteraciones del shuffleando los géneros en cada una y obtuvimos p=0.0003. Con lo cual estimamos 
+que p=O(10^-4).
 '''
 #%%
 
@@ -432,7 +428,8 @@ Inciso c)
 
 Probamos eliminando aquellos nodos cuyo grado es menor teniendo en cuanta el género de cada nodo. Es decir, 
 como posteriormente vimos que la red presentaba homofilia queremos lograr separla en dos comunidades, una
-compuesta mayoritariamente por delfines de género masculino y otro mayoritariamanete por femeninos.
+compuesta mayoritariamente por delfines de género masculino y otro mayoritariamanete por femeninos. Nuevamente
+ignoramos aquellos delfines con género NA dado que desconocemos el género de los mismos.
 '''
 
 G_copia=G.copy() #Hacemos una copia del grafo para no eliminar nodos del original
@@ -534,9 +531,12 @@ de los casos en los cuales la red se separó en componentes de tamaños del mism
 en una cantidad de pasos menor que la no aleatoria (16 en promedio contra 27 del original) se puede ver que
 la diferencia entre los tamaños de las componentes también es superior (16 en promedio contra 3 del original).
 Tomando el p-valor como el inciso anterior p=0.02 (<0.05). En base a estos resultados, nos parece que la estrategia
-de eliminar secuencialmente los nodos de menor grado priorizando en eliminar aquellos nodos enlazados con
-nodos de diferente género otorga resultados mejores la eliminación azarosa aunque nos hubiese gustado encontrar
-una manera de separar la red con menor cantidad de pasos.
+de eliminar secuencialmente los nodos de menor grado priorizando en eliminar aquellos enlazados con
+nodos de diferente género otorga resultados mejores la eliminación azarosa. Sin embargo, nos hubiese gustado
+encontrar un método que presentara menor cantidad de pasos.
+Comentario: Dado que las iteraciones se realizan shuffleando el género de forma aleatoria y como vimos antes
+1000 iteraciones parecen pocas para la naturaleza de la red, algunos valores mencionados anteriormente pueden
+variar (ligeramente) al ejecutar el programa. Es recomendable aumentar el número de iteraciones a 10000.
 '''
 
 
@@ -547,7 +547,7 @@ una manera de separar la red con menor cantidad de pasos.
 #                               PUNTO 3 
 ################################################################################
 
-path = 'C:/Users/Mati/Documents/GitHub/Redes/tc1 data/' #Colocar la ruta donde se encuentra alojado el archivo
+path = 'D:/Redes 2020/TC01_data/' #Colocar la ruta donde se encuentra alojado el archivo
 
 file = 'as-22july06.gml'
 
@@ -722,6 +722,7 @@ plt.legend(fontsize = 15)
 
 plt.show()
 
+print('Estimación del exponente: '+str(alpha))
 
 #%%
 
@@ -910,7 +911,7 @@ proteinas2 = path+'yeast_AP-MS.txt'# yeast_AP_MS_txt
 
 '''
 Por practicidad, este ejercicio lo hicimos iterando sobre todas las redes e imprimiendo los
-resultados en la consola. Los análisis y comentarios se encuentran al final del script.
+resultados. Los análisis y comentarios se encuentran al final del script.
 '''
 # iterar sobre todas las redes de ejemplo
 for n in range(0,4):

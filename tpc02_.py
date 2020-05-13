@@ -262,7 +262,7 @@ def moneda_cargada(p):
 #%%
 
 '''
-a)
+Inciso a)
 '''
 
 # Armamos la red random cuyos nodos se conectan con probabilidad constante p:
@@ -356,10 +356,60 @@ para m y <k>.
 
 #%%
 
+'''
+Inciso b)
+'''
+
+# Creamos una nueva red del tipo cliqué de grado k0, es decir, hay k0 nodos todos enlazados entre sí:
+    
+k0 = 5 #Establecer el grado inicial de la red
+
+n = 50 # Establecer el número de nodos que se desea que tenga la red.
+
+red_rand = nx.complete_graph(k0)
+
+for ki in range(k0, n):
+    
+    # Ahora, creamos una lista de nodos al azar de la red con la que se conectará el nuevo nodo:
+    enlaces = random.sample(list(red_rand.nodes()), k = k0)
+    
+    for i in enlaces:
+        
+        red_rand.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
 
 '''
-b)
+Con esto hemos creado un algoritmo iterativo para generar una red, cuyos nodos iniciales tienen grado k0, agregando un nuevo
+nodo de grado k0 uniéndose a los demás de forma aleatoria en cada paso.
 '''
+
+#%%
+
+'''
+Inciso c)
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

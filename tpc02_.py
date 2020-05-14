@@ -12,16 +12,14 @@ Grupo: Camila Sanz, Matías Zanini.
 #                                 PAQUETES 
 ################################################################################
 
-#import pandas as pd       #DB
 import numpy as np        #matemática, simil maltab 
 import networkx as nx
 import matplotlib.pyplot as plt
-#from matplotlib_venn import venn3
-#import igraph as ig
 import random
 import math
 import plfit
 from collections import Counter
+from scipy.optimize import curve_fit
 # Evitar acumulación de mensajes de warning en el display
 import warnings  
 warnings.filterwarnings("ignore")
@@ -475,3 +473,143 @@ Inciso d)
 ################################################################################
 #                               PUNTO 3 
 ################################################################################
+
+#Usamos el mismo código que en el Punto 2, inciso c)
+
+# Creamos una nueva red del tipo cliqué de grado k0, es decir, hay k0 nodos todos enlazados entre sí:
+    
+k0 = 7 # Establecer el grado inicial de la red
+
+n = int(10000) # Establecer el número de nodos que se desea que tenga la red.
+
+red_barab = nx.complete_graph(k0)
+
+k = 7 # Establecer el grado de los nodos que se agregarán en cada paso. IMPORTANTE: k <= k0
+
+t=0#paso
+
+step_5=[]
+
+grado_5=[]
+
+step_95=[]
+
+grado_95=[]
+
+if k>k0:
+    
+    raise ValueError('No se puede añadir un nodo con un grado k mayor que el inicial k0 sin repetir enlaces.')
+    
+
+for ki in range(k0, n):
+    
+    print(ki)
+    
+    t=t+1
+    
+    grado_arr = np.asarray(red_barab.degree())[:,1] # Genera un array con los grados de la red
+    
+    probs = grado_arr / sum(grado_arr) # Array con las probabilidades de cada grado segun Barabasi: p(k_i) = ki / sum(k_i)
+    
+    '''
+    Ahora, creamos una lista de nodos elegidos con la probabilidad dada por probs (no repetidos) de la red 
+    con la que se conectará el nuevo nodo:
+    '''
+    enlaces = np.random.choice(np.asarray(red_barab.nodes()), size = k, p = probs, replace = False)
+    
+    for i in enlaces:
+        
+        red_barab.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
+    
+    if t>=5:
+        
+        grado_5.append(red_barab.degree[k0+5-1])#restamos 1 porque comenzamos a contar del nodo 0
+        
+        step_5.append(t)
+    
+    if t>=95:
+        
+        grado_95.append(red_barab.degree[k0+95-1])#restamos 1 porque comenzamos a contar del nodo 0
+        
+        step_95.append(t)
+
+fig = plt.figure()
+
+ax1 = fig.add_subplot(111)
+
+ax1.scatter(step_5, grado_5, s=10, c='C0', label='t=5')
+
+ax1.scatter(step_95,grado_95, s=10, c='C2', label='t=95')
+
+ax1.set_xscale('log')
+
+ax1.set_yscale('log')
+
+plt.legend(loc='upper left')
+
+plt.ylabel('Grado (k)')
+
+plt.xlabel('t (paso)')
+
+plt.show()
+
+plt.close()
+
+'''
+Podemos observar que, en un principio, las curvas de la evolución temporal del grado para los nodos
+seleccionados son inestables y a medida que incrementamos la cantidad de nodos en la red, adoptan un comportamiento
+aproximadamente lineal (en escala logarítmica) con una pendiente similar. Esto puede observarse con
+más claridad en la curva de t=5, como este nodo es agregado en pasos posteriores, se puede
+observar la estabilidad de la curva para t>100.
+Podemos entonces estimar el exponente (pendiente en la escala adoptada) de estas curvas.
+'''
+#fiteamos
+
+#dividimos por el t0 de cada una para que comiencen del mismo x0-y0
+
+x5=np.divide(step_5,step_5[0])
+
+x95=np.divide(step_95,step_95[0])
+
+def exp_func(x, a):
+    
+    return k0 * (x**a)
+
+popt5, pcov5 = curve_fit(exp_func, x5,grado_5)
+
+popt95, pcov95 = curve_fit(exp_func, x95, grado_95)
+
+fig = plt.figure()
+
+ax1 = fig.add_subplot(111)
+
+ax1.scatter(x5, grado_5, s=10,c='C0', label='t=5')
+
+ax1.scatter(x95,grado_95, s=10,c='C2', label='t=95')
+
+ax1.plot(x5, exp_func(x5, *popt5), 'r-',label='Fit: a=%5.3f (t=5)' % tuple(popt5))
+
+ax1.plot(x95, exp_func(x95, *popt95), 'r--',label='Fit: a=%5.3f (t=95)' % tuple(popt95))
+
+ax1.set_xscale('log')
+
+ax1.set_yscale('log')
+
+plt.legend(loc='upper left')
+
+plt.ylabel('Grado (k)')
+
+plt.xlabel('t/t0 (paso)')
+
+plt.show()
+
+'''
+Como podemos ver, la pendiente de ambas curvas es similar a 0.45. Podemos estimar que 
+este comportamiento, para t>t0+100 resulta independiente del nodo que tomemos.
+Los hubs de la red corresponden, en general, a los nodos más viejos (aquellos agregados en los primeros
+pasos), que incrementan su conectividad gracias a los nuevos. Debido a que la probabilidad de establecer un enlace
+entre un vértice nuevo y viejo es proporcional al grado de este último, se genera el efecto de "rich-get-richer",
+en donde aquellos nodos con mayor cantidad de conexiones tendrán probabilidad más alta de establecer un nuevo 
+enlace. De esta forma los hubs incrementan su grado y por ende su probabilidad de conexión en cada iteración.
+'''
+#%%

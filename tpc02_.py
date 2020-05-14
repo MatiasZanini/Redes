@@ -442,8 +442,8 @@ grande de nodos, la cantidad de enlaces se encuentre dominada por estos hubs.
 
 Esto quiere decir que, como en cada paso se agregó un 
 nodo de grado k0, y que la mayoría de los enlaces fueron a parar a dichos hubs, el tamaño de los enlaces totales en la red
-resulta similar a multiplicar k0 por la cantidad de pasos. Además, como n>>k0, se tiene que, si el número de pasos es
-n-k0 ---> el número de pasos será similar a n, con lo cual m será similar a k0*n.
+resulta similar a multiplicar k0 por la cantidad de pasos. Además, como n>>k0>k, se tiene que, si el número de pasos es
+n-k0 ---> el número de pasos será similar a n, con lo cual m será similar a k*n.
 '''
 
 #%%

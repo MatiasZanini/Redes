@@ -362,15 +362,15 @@ Inciso b)
 
 # Creamos una nueva red del tipo cliqué de grado k0, es decir, hay k0 nodos todos enlazados entre sí:
     
-k0 = 5 #Establecer el grado inicial de la red
+k0 = 5 # Establecer el grado inicial de la red
 
-n = 50 # Establecer el número de nodos que se desea que tenga la red.
+n = int(50) # Establecer el número de nodos que se desea que tenga la red.
 
 red_rand = nx.complete_graph(k0)
 
 for ki in range(k0, n):
     
-    # Ahora, creamos una lista de nodos al azar de la red con la que se conectará el nuevo nodo:
+    # Ahora, creamos una lista de nodos al azar (no repetidos) de la red con la que se conectará el nuevo nodo:
     enlaces = random.sample(list(red_rand.nodes()), k = k0)
     
     for i in enlaces:
@@ -388,18 +388,42 @@ nodo de grado k0 uniéndose a los demás de forma aleatoria en cada paso.
 Inciso c)
 '''
 
+'''
+La red tipo Barabasi es similar a la generada en el item b). Sin embargo, aquí cada nodo agregado se enlazará a los demás
+nodos de la red con una probabilidad que depende del grado de los mismos. Cuando mayor sea el grado, mayor la probabilidad 
+de que el nuevo nodo se conecte a él. Según Barabasi: p(k_i) = k_i / sum(k_i).
+'''
 
+# Creamos una nueva red del tipo cliqué de grado k0, es decir, hay k0 nodos todos enlazados entre sí:
+    
+k0 = 5 # Establecer el grado inicial de la red
 
+n = int(100) # Establecer el número de nodos que se desea que tenga la red.
 
+red_barab = nx.complete_graph(k0)
 
+k = 3 # Establecer el grado de los nodos que se agregarán en cada paso. IMPORTANTE: k <= k0
 
+if k>k0:
+    
+    raise ValueError('No se puede añadir un nodo con un grado k mayor que el inicial k0 sin repetir enlaces.')
+    
 
+for ki in range(k0, n):
+    
+    grado_arr = np.asarray(red_barab.degree())[:,1] # Genera un array con los grados de la red
+    
+    probs = grado_arr / sum(grado_arr) # Array con las probabilidades de cada grado segun Barabasi: p(k_i) = ki / sum(k_i)
+    
+    '''
+    Ahora, creamos una lista de nodos elegidos con la probabilidad dada por probs (no repetidos) de la red 
+    con la que se conectará el nuevo nodo:
+    '''
+    enlaces = np.random.choice(np.asarray(red_barab.nodes()), size = k, p = probs, replace = False)
 
-
-
-
-
-
+    for i in enlaces:
+        
+        red_barab.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
 
 
 

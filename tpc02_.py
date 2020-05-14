@@ -364,7 +364,7 @@ Inciso b)
     
 k0 = 5 # Establecer el grado inicial de la red
 
-n = int(50) # Establecer el número de nodos que se desea que tenga la red.
+n = int(1e4) # Establecer el número de nodos que se desea que tenga la red.
 
 red_rand = nx.complete_graph(k0)
 
@@ -398,11 +398,11 @@ de que el nuevo nodo se conecte a él. Según Barabasi: p(k_i) = k_i / sum(k_i).
     
 k0 = 5 # Establecer el grado inicial de la red
 
-n = int(100) # Establecer el número de nodos que se desea que tenga la red.
+n = int(1e4) # Establecer el número de nodos que se desea que tenga la red.
 
 red_barab = nx.complete_graph(k0)
 
-k = 3 # Establecer el grado de los nodos que se agregarán en cada paso. IMPORTANTE: k <= k0
+k = 5 # Establecer el grado de los nodos que se agregarán en cada paso. IMPORTANTE: k <= k0
 
 if k>k0:
     
@@ -425,13 +425,34 @@ for ki in range(k0, n):
         
         red_barab.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
 
+# i.
 
+'''
+Ahora tenemos que comparar la cantidad m de enlaces en la red con n*k0:
+'''    
 
+m = red_barab.number_of_edges() # Cantidad de enlaces
 
+nk0 = n*k0 # Valor esperado para el número de enlaces en una red del tipo Barabasi
 
+print('El número de enlaces <k> difiere del valor esperado en un', np.around(abs(m-nk0)/nk0 * 100, 4), '%')
 
+'''
+Como vemos, ambos valores son comprables. Esto se debe a la aparición de hubs, tal como se esperaba. Los nodos con gran
+cantidad de enlaces (grado alto), tienden a captar los nuevos nodos agregados a la red. Esto implica que para un número 
+grande de nodos, la cantidad de enlaces se encuentre dominada por estos hubs. 
 
+Esto quiere decir que, como en cada paso se agregó un 
+nodo de grado k0, y que la mayoría de los enlaces fueron a parar a dichos hubs, el tamaño de los enlaces totales en la red
+resulta similar a multiplicar k0 por la cantidad de pasos. Además, como n>>k0, se tiene que, si el número de pasos es
+n-k0 ---> el número de pasos será similar a n, con lo cual m será similar a k0*n.
+'''
 
+#%%
+
+'''
+Inciso d)
+'''
 
 
 

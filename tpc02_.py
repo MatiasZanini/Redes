@@ -428,14 +428,14 @@ for ki in range(k0, n):
 # i.
 
 '''
-Ahora tenemos que comparar la cantidad m de enlaces en la red con n*k0:
+Ahora tenemos que comparar la cantidad m de enlaces en la red con n*k, en particular podríamos usar k=k0:
 '''    
 
 m = red_barab.number_of_edges() # Cantidad de enlaces
 
-nk0 = n*k0 # Valor esperado para el número de enlaces en una red del tipo Barabasi
+nk = n*k # Valor esperado para el número de enlaces en una red del tipo Barabasi
 
-print('El número de enlaces <k> difiere del valor esperado en un', np.around(abs(m-nk0)/nk0 * 100, 4), '%')
+print('El número de enlaces <k> difiere del valor esperado en un', np.around(abs(m-nk)/nk * 100, 4), '%')
 
 '''
 Como vemos, ambos valores son comprables. Esto se debe a la aparición de hubs, tal como se esperaba. Los nodos con gran

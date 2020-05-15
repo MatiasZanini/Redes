@@ -138,15 +138,15 @@ for i in np.arange(len(grafos)):
 '''
 Inciso b)
 Cualitativamente, se puede ver que la distribución de grados de la red de Internet (as-22july06) y 
-de la red de proteínas (yeast_Y2H) corresponeden a una power law. Para verificar estas observaciones, podemos
-hacer los ajustes correspondientes (inciso d)
+de la red de proteínas (yeast_Y2H) son las que mejor se ajustan a una power law. 
+Para verificar estas observaciones, podemos hacer los ajustes correspondientes (inciso d)
 '''
 
 '''
 Inciso c)
 Todas las redes exiben efectos de borde, por un lado, ninguna red presenta nodos con k=0. Por otro lado, 
 si cualitativamente trazamos una recta lineal en los histogramas partiendo del mínimo grado en donde
-podemos comenzar a trazar la recta estimamos que deberíamos ver mayor cantidad de hubs en la red.
+podemos comenzar a trazar la recta estimamos que deberíamos ver hubs de grado superior en la red.
 Cualitativamente, la que parece indicar un efecto de borde mayor es la red de Internet, seguida por la
 de proteínas.
 Verificamos esta última estimación en el final del script donde comparamos el K máximo que presenta cada
@@ -196,6 +196,8 @@ for i in np.arange(len(grafos)):
 
 #%%
 '''
+Inciso e)
+
 Las redes que siguen una power law son invariantes de escala, es decir, para todas las escalas observamos
 el mismo comportamiento, esto también implica que no existe una escala característica en el sistema.
 Por lo tanto, carece de sentido calcular el grado medio de los nodos de la red ya que las fluctuaciones
@@ -488,6 +490,8 @@ k = 7 # Establecer el grado de los nodos que se agregarán en cada paso. IMPORTA
 
 t=0#paso
 
+#Guardamos en listas los valores de los pasos y los grados para t=5 y t=95
+
 step_5=[]
 
 grado_5=[]
@@ -502,9 +506,7 @@ if k>k0:
     
 
 for ki in range(k0, n):
-    
-    print(ki)
-    
+        
     t=t+1
     
     grado_arr = np.asarray(red_barab.degree())[:,1] # Genera un array con los grados de la red
@@ -565,7 +567,7 @@ Podemos entonces estimar el exponente (pendiente en la escala adoptada) de estas
 '''
 #fiteamos
 
-#dividimos por el t0 de cada una para que comiencen del mismo x0-y0
+#dividimos por el t0 de cada una para que las curvas comiencen del mismo x0-y0
 
 x5=np.divide(step_5,step_5[0])
 
@@ -573,7 +575,7 @@ x95=np.divide(step_95,step_95[0])
 
 def exp_func(x, a):
     
-    return k0 * (x**a)
+    return k * (x**a)
 
 popt5, pcov5 = curve_fit(exp_func, x5,grado_5)
 
@@ -603,13 +605,18 @@ plt.xlabel('t/t0 (paso)')
 
 plt.show()
 
+plt.close()
+
 '''
-Como podemos ver, la pendiente de ambas curvas es similar a 0.45. Podemos estimar que 
-este comportamiento, para t>t0+100 resulta independiente del nodo que tomemos.
+Como podemos ver, la pendiente de ambas curvas es similar a 0.45 (este valor puede estar ligeramente
+modificado por la forma aleatoria en que se genera la red, recomendamos incrementar la cantidad de 
+de pasos para observar comportamientos más estables de las curvas, en particular de la curva
+para t=95). Podemos estimar que este comportamiento, para t>t0+100 resulta independiente del nodo que tomemos.
 Los hubs de la red corresponden, en general, a los nodos más viejos (aquellos agregados en los primeros
-pasos), que incrementan su conectividad gracias a los nuevos. Debido a que la probabilidad de establecer un enlace
-entre un vértice nuevo y viejo es proporcional al grado de este último, se genera el efecto de "rich-get-richer",
-en donde aquellos nodos con mayor cantidad de conexiones tendrán probabilidad más alta de establecer un nuevo 
-enlace. De esta forma los hubs incrementan su grado y por ende su probabilidad de conexión en cada iteración.
+pasos, es decir, con menor t0), incrementan su conectividad en una proporción mayor que los nuevos. 
+Debido a que la probabilidad de establecer un enlace entre un vértice nuevo y viejo es proporcional al grado de 
+este último, se genera el efecto de "rich-get-richer", en donde aquellos nodos con mayor cantidad de conexiones 
+tendrán probabilidad más alta de establecer un nuevo enlace. 
+De esta forma los hubs incrementan su grado y por ende su probabilidad de conexión en cada iteración.
 '''
 #%%

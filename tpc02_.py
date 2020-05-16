@@ -241,7 +241,7 @@ for i in np.arange(len(grafos)):
 #                               PUNTO 2 
 ################################################################################
 
-#Definimos las funciones que vamos a usar a lo largo del punto:
+#Definimos una función útil para utilizar durante el punto:
     
 def moneda_cargada(p):
     
@@ -264,32 +264,43 @@ def moneda_cargada(p):
 '''
 Inciso a)
 '''
-
 # Armamos la red random cuyos nodos se conectan con probabilidad constante p:
+
+def red_erdos(p, n):
+    
+    nodos = np.arange(1, n+1, 1)
+
+    red_er = nx.Graph() # Inicializamos el grafo
+    
+    red_er.add_nodes_from(nodos) 
+    
+    enlaces_list = [] 
+    
+    for fila in nodos:
+        
+        # Nos movemos por arriba de la diagonal de la matriz de adyacencia para no contar 2 veces los pares de nodos:
+        for columna in range(int(fila)+1, len(nodos)+1): 
+        
+            if moneda_cargada(p):
+                
+                # Añadimos a la lista de enlaces la tupla si sale favorable la tirada con probabilidad p:
+                enlaces_list.append( (fila, columna) ) 
+                
+    red_er.add_edges_from(enlaces_list)
+    
+    return red_er
+
+
+
+
+
+
     
 p = 0.2 # Probabilidad con la que se conectan dos nodos.
 
 n = 1e4 # Cantidad de Nodos en la red
 
-nodos = np.arange(1, n+1, 1)
-
-red_er = nx.Graph() # Inicializamos el grafo
-
-red_er.add_nodes_from(nodos) 
-
-enlaces_list = [] 
-
-for fila in nodos:
-    
-    # Nos movemos por arriba de la diagonal de la matriz de adyacencia para no contar 2 veces los pares de nodos:
-    for columna in range(int(fila)+1, len(nodos)+1): 
-    
-        if moneda_cargada(p):
-            
-            # Añadimos a la lista de enlaces la tupla si sale favorable la tirada con probabilidad p:
-            enlaces_list.append( (fila, columna) ) 
-            
-red_er.add_edges_from(enlaces_list)
+red_er = red_erdos(p, n)
 
 # i.
 
@@ -360,27 +371,34 @@ para m y <k>.
 Inciso b)
 '''
 
-# Creamos una nueva red del tipo cliqué de grado k0, es decir, hay k0 nodos todos enlazados entre sí:
+def red_random(k0, n):
     
-k0 = 5 # Establecer el grado inicial de la red
-
-n = int(1e4) # Establecer el número de nodos que se desea que tenga la red.
-
-red_rand = nx.complete_graph(k0)
-
-for ki in range(k0, n):
+    # Creamos una nueva red del tipo cliqué de grado k0, es decir, hay k0 nodos todos enlazados entre sí:
     
-    # Ahora, creamos una lista de nodos al azar (no repetidos) de la red con la que se conectará el nuevo nodo:
-    enlaces = random.sample(list(red_rand.nodes()), k = k0)
-    
-    for i in enlaces:
+    red_rand = nx.complete_graph(k0)
+
+    for ki in range(k0, n):
         
-        red_rand.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
+        # Ahora, creamos una lista de nodos al azar (no repetidos) de la red con la que se conectará el nuevo nodo:
+        enlaces = random.sample(list(red_rand.nodes()), k = k0)
+        
+        for i in enlaces:
+            
+            red_rand.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
+            
+    return red_rand
 
 '''
 Con esto hemos creado un algoritmo iterativo para generar una red, cuyos nodos iniciales tienen grado k0, agregando un nuevo
 nodo de grado k0 uniéndose a los demás de forma aleatoria en cada paso.
 '''
+    
+k0 = 5 # Establecer el grado inicial de la red
+
+n = int(1e4) # Establecer el número de nodos que se desea que tenga la red.
+
+red_rand = red_random(k0, n)
+
 
 #%%
 
@@ -394,36 +412,42 @@ nodos de la red con una probabilidad que depende del grado de los mismos. Cuando
 de que el nuevo nodo se conecte a él. Según Barabasi: p(k_i) = k_i / sum(k_i).
 '''
 
+def red_barabasi(k0, k, n):
+    
+    if k>k0:
+        
+        raise ValueError('No se puede añadir un nodo con un grado k mayor que el inicial k0 sin repetir enlaces.')
+    
+    red_barab = nx.complete_graph(k0)     
+    
+    for ki in range(k0, n):
+        
+        grado_arr = np.asarray(red_barab.degree())[:,1] # Genera un array con los grados de la red
+        
+        probs = grado_arr / sum(grado_arr) # Array con las probabilidades de cada grado segun Barabasi: p(k_i) = ki / sum(k_i)
+        
+        '''
+        Ahora, creamos una lista de nodos elegidos con la probabilidad dada por probs (no repetidos) de la red 
+        con la que se conectará el nuevo nodo:
+        '''
+        enlaces = np.random.choice(np.asarray(red_barab.nodes()), size = k, p = probs, replace = False)
+    
+        for i in enlaces:
+            
+            red_barab.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
+            
+    return red_barab
+
+
 # Creamos una nueva red del tipo cliqué de grado k0, es decir, hay k0 nodos todos enlazados entre sí:
     
 k0 = 5 # Establecer el grado inicial de la red
 
 n = int(1e4) # Establecer el número de nodos que se desea que tenga la red.
 
-red_barab = nx.complete_graph(k0)
-
 k = 5 # Establecer el grado de los nodos que se agregarán en cada paso. IMPORTANTE: k <= k0
 
-if k>k0:
-    
-    raise ValueError('No se puede añadir un nodo con un grado k mayor que el inicial k0 sin repetir enlaces.')
-    
-
-for ki in range(k0, n):
-    
-    grado_arr = np.asarray(red_barab.degree())[:,1] # Genera un array con los grados de la red
-    
-    probs = grado_arr / sum(grado_arr) # Array con las probabilidades de cada grado segun Barabasi: p(k_i) = ki / sum(k_i)
-    
-    '''
-    Ahora, creamos una lista de nodos elegidos con la probabilidad dada por probs (no repetidos) de la red 
-    con la que se conectará el nuevo nodo:
-    '''
-    enlaces = np.random.choice(np.asarray(red_barab.nodes()), size = k, p = probs, replace = False)
-
-    for i in enlaces:
-        
-        red_barab.add_edge(i, ki) # Agregamos cada enlace para el nuevo nodo.
+red_barab = red_barabasi(k0, k, n)
 
 # i.
 
@@ -433,9 +457,9 @@ Ahora tenemos que comparar la cantidad m de enlaces en la red con n*k, en partic
 
 m = red_barab.number_of_edges() # Cantidad de enlaces
 
-nk = n*k # Valor esperado para el número de enlaces en una red del tipo Barabasi
+m_teo_b = n*k # Valor esperado para el número de enlaces en una red del tipo Barabasi
 
-print('El número de enlaces <k> difiere del valor esperado en un', np.around(abs(m-nk)/nk * 100, 4), '%')
+print('El número de enlaces <k> difiere del valor esperado en un', np.around(abs(m-m_teo_b)/m_teo_b * 100, 4), '%')
 
 '''
 Como vemos, ambos valores son comprables. Esto se debe a la aparición de hubs, tal como se esperaba. Los nodos con gran
@@ -443,8 +467,8 @@ cantidad de enlaces (grado alto), tienden a captar los nuevos nodos agregados a 
 grande de nodos, la cantidad de enlaces se encuentre dominada por estos hubs. 
 
 Esto quiere decir que, como en cada paso se agregó un 
-nodo de grado k0, y que la mayoría de los enlaces fueron a parar a dichos hubs, el tamaño de los enlaces totales en la red
-resulta similar a multiplicar k0 por la cantidad de pasos. Además, como n>>k0>k, se tiene que, si el número de pasos es
+nodo de grado k, y que la mayoría de los enlaces fueron a parar a dichos hubs, el tamaño de los enlaces totales en la red
+resulta similar a multiplicar k por la cantidad de pasos. Además, como n>>k0>k, se tiene que, si el número de pasos es
 n-k0 ---> el número de pasos será similar a n, con lo cual m será similar a k*n.
 '''
 
@@ -455,15 +479,54 @@ Inciso d)
 '''
 
 
+'''
+Caso 1. Comparando con "as-22july06_edgelist" :
+'''
+# Ponemos los valores de n y m que obtuvimos para el ejercicio 1:
+n1 = 22941
+
+m1 = 48372
 
 
+p = m / (n*(n-1)/2) # Calculamos el p que tendría asociado una red erdos-renyi de n nodos y m enlaces.
 
+red_er_1 = red_erdos(p, n1) #Red erdos-renyi para estos valores de n y m
 
+red_rand_1 = red_random(5, n) # Elegimos k0 = 5  de forma arbitraria para inicializar la red random.
 
+k1 = int(m1/n1) # Calculamos el grado k de cada nodo agregado a la red tipo barabasi. 
 
+red_barab_1 = red_barabasi(5, k1, n1) # Elegimos k0 = 5 de forma arbitraria para inicializar la red random.
 
+#%%
 
+#Graficamos:
+    
+grados_er = np.asarray(red_er_1.degree())[:,1]
 
+#grados_er_log = np.log10(grados_er)
+
+#bins_er = np.logspace(np.min(grados_er), np.max(grados_er), 13)
+
+bins_er = np.arange(np.min(grados_er), np.max(grados_er)+1, 1)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_er, bins = bins_er, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+#plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Erdos-Renyi simulando la red "as-22july06_edgelist" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
 
 
 
@@ -608,7 +671,7 @@ plt.show()
 plt.close()
 
 '''
-Como podemos ver, la pendiente de ambas curvas es similar a 0.45 (este valor puede estar ligeramente
+Como podemos ver, la pendiente de ambas curvas es similar a 0.48+-0.03 (este valor puede estar ligeramente
 modificado por la forma aleatoria en que se genera la red, recomendamos incrementar la cantidad de 
 de pasos para observar comportamientos más estables de las curvas, en particular de la curva
 para t=95). Podemos estimar que este comportamiento, para t>t0+100 resulta independiente del nodo que tomemos.

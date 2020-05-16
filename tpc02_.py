@@ -488,11 +488,11 @@ n1 = 22941
 m1 = 48372
 
 
-p = m / (n*(n-1)/2) # Calculamos el p que tendría asociado una red erdos-renyi de n nodos y m enlaces.
+p = m1 / (n1*(n1-1)/2) # Calculamos el p que tendría asociado una red erdos-renyi de n nodos y m enlaces.
 
 red_er_1 = red_erdos(p, n1) #Red erdos-renyi para estos valores de n y m
 
-red_rand_1 = red_random(5, n) # Elegimos k0 = 5  de forma arbitraria para inicializar la red random.
+red_rand_1 = red_random(5, n1) # Elegimos k0 = 5  de forma arbitraria para inicializar la red random.
 
 k1 = int(m1/n1) # Calculamos el grado k de cada nodo agregado a la red tipo barabasi. 
 
@@ -500,7 +500,7 @@ red_barab_1 = red_barabasi(5, k1, n1) # Elegimos k0 = 5 de forma arbitraria para
 
 #%%
 
-#Graficamos:
+# Graficamos:
     
 grados_er = np.asarray(red_er_1.degree())[:,1]
 
@@ -520,6 +520,41 @@ plt.yscale('log')
 
 plt.title('Distribución de grado para red tipo Erdos-Renyi simulando la red "as-22july06_edgelist" ')
 
+plt.xlabel('k (linear scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+
+'''
+Observamos una distribución del tipo Poisson cuyo máximo se alcanza en el grado k=4. Esto es esperable, ya que el grado
+medio de la red es 2*m1/n1 el cual es aproximadamente 4.23.
+
+Debido a que no aparecieron Hubs, no fue necesario emplear la escala logaritmica en el eje x (bins), ya que los grados de 
+cada nodo son bajos (el máximo es 15).
+'''
+
+#%%
+
+grados_rand = np.asarray(red_rand_1.degree())[:,1]
+
+grados_rand_log = np.log10(grados_rand)
+
+bins_rand = np.logspace(np.min(grados_rand_log), np.max(grados_rand_log), 20)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_rand, bins = bins_rand, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Random simulando la red "as-22july06_edgelist" ')
+
 plt.xlabel('k (log scale)')
 
 plt.ylabel('P(k) (log scale)')
@@ -529,6 +564,391 @@ plt.grid()
 plt.show()
 
 
+#%%
+
+grados_barab = np.asarray(red_barab_1.degree())[:,1]
+
+grados_barab_log = np.log10(grados_barab)
+
+bins_barab = np.logspace(np.min(grados_barab_log), np.max(grados_barab_log), 20)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_barab, bins = bins_barab, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Barabasi simulando la red "as-22july06_edgelist" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+'''
+En este histograma, se puede observar claramente un decaimiento del tipo libre de escala. Esto era lo esperado ya que
+el modelo de Barabasi propone una mejor aproximación a las redes reales que los modelos random.
+'''
+
+
+
+#######################################################################################################################
+#%%
+
+'''
+Caso 2. Comparando con "netscience_edgelist" :
+'''
+
+n2 = 1450
+
+m2 = 2727
+
+p = m2 / (n2 *(n2 - 1)/2) # Calculamos el p que tendría asociado una red erdos-renyi de n nodos y m enlaces.
+
+red_er_2 = red_erdos(p, n2) #Red erdos-renyi para estos valores de n y m
+
+red_rand_2 = red_random(5, n2) # Elegimos k0 = 5  de forma arbitraria para inicializar la red random.
+
+k2 = int(m2/n2) # Calculamos el grado k de cada nodo agregado a la red tipo barabasi. 
+
+red_barab_2 = red_barabasi(5, k2, n2) # Elegimos k0 = 5 de forma arbitraria para inicializar la red random.
+
+#%%
+
+# Graficamos:
+    
+grados_er = np.asarray(red_er_2.degree())[:,1]
+
+#grados_er_log = np.log10(grados_er)
+
+#bins_er = np.logspace(np.min(grados_er), np.max(grados_er), 13)
+
+bins_er = np.arange(np.min(grados_er), np.max(grados_er)+1, 1)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_er, bins = bins_er, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+#plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Erdos-Renyi simulando la red "netscience_edgelist" ')
+
+plt.xlabel('k (linear scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+
+'''
+Análogo al caso anterior. Se observa una curva tipo Poisson.
+'''
+
+#%%
+
+grados_rand = np.asarray(red_rand_2.degree())[:,1]
+
+grados_rand_log = np.log10(grados_rand)
+
+bins_rand = np.logspace(np.min(grados_rand_log), np.max(grados_rand_log), 20)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_rand, bins = bins_rand, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Random simulando la red "netscience_edgelist" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+
+#%%
+
+grados_barab = np.asarray(red_barab_2.degree())[:,1]
+
+grados_barab_log = np.log10(grados_barab)
+
+bins_barab = np.logspace(np.min(grados_barab_log), np.max(grados_barab_log), 12)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_barab, bins = bins_barab, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Barabasi simulando la red "netscience_edgelist" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+'''
+Si bien en este histograma se encuentra, nuevamente como era esperado, un decaimiento libre de escala, se ve que los 
+últimos puntos se alejan de este comportamiento. Es posible que se deba a que esta red posee muchos menos nodos que la
+anterior, aumentando el error estadístico.
+'''
+
+#######################################################################################################################
+#%%
+'''
+Caso 3. Comparando con "power_enlaces" :
+'''
+# Ponemos los valores de n y m que obtuvimos para el ejercicio 1:
+n3 = 4941
+
+m3 = 6594
+
+
+p = m3 / (n3*(n3-1)/2) # Calculamos el p que tendría asociado una red erdos-renyi de n nodos y m enlaces.
+
+red_er_3 = red_erdos(p, n3) #Red erdos-renyi para estos valores de n y m
+
+red_rand_3 = red_random(5, n3) # Elegimos k0 = 5  de forma arbitraria para inicializar la red random.
+
+k3 = int(m3/n3) # Calculamos el grado k de cada nodo agregado a la red tipo barabasi. 
+
+red_barab_3 = red_barabasi(5, k3, n3) # Elegimos k0 = 5 de forma arbitraria para inicializar la red random.
+
+
+#%%
+
+# Graficamos:
+    
+grados_er = np.asarray(red_er_3.degree())[:,1]
+
+#grados_er_log = np.log10(grados_er)
+
+#bins_er = np.logspace(np.min(grados_er), np.max(grados_er), 13)
+
+bins_er = np.arange(np.min(grados_er), np.max(grados_er)+1, 1)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_er, bins = bins_er, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+#plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Erdos-Renyi simulando la red "power_enlaces" ')
+
+plt.xlabel('k (linear scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+
+'''
+Análogo a los casos anteriores. Se observa una curva tipo Poisson.
+'''
+
+#%%
+
+grados_rand = np.asarray(red_rand_3.degree())[:,1]
+
+grados_rand_log = np.log10(grados_rand)
+
+bins_rand = np.logspace(np.min(grados_rand_log), np.max(grados_rand_log), 20)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_rand, bins = bins_rand, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Random simulando la red "power_enlaces" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+
+#%%
+
+grados_barab = np.asarray(red_barab_3.degree())[:,1]
+
+grados_barab_log = np.log10(grados_barab)
+
+bins_barab = np.logspace(np.min(grados_barab_log), np.max(grados_barab_log), 13)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_barab, bins = bins_barab, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Barabasi simulando la red "power_enlaces" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+'''
+Nuevamente, para el caso de la red tipo Barabasi, se encuentra una distribución libre de escala, tal como se esperaba.
+'''
+
+#######################################################################################################################
+
+#%%
+'''
+Caso 4. Comparando con "yeast_Y2H" :
+'''
+# Ponemos los valores de n y m que obtuvimos para el ejercicio 1:
+n4 = 2018
+
+m4 = 2930
+
+
+p = m4 / (n4*(n4-1)/2) # Calculamos el p que tendría asociado una red erdos-renyi de n nodos y m enlaces.
+
+red_er_4 = red_erdos(p, n4) #Red erdos-renyi para estos valores de n y m
+
+red_rand_4 = red_random(5, n4) # Elegimos k0 = 5  de forma arbitraria para inicializar la red random.
+
+k4 = int(m4/n4) # Calculamos el grado k de cada nodo agregado a la red tipo barabasi. 
+
+red_barab_4 = red_barabasi(5, k4, n4) # Elegimos k0 = 5 de forma arbitraria para inicializar la red random.
+
+#%%
+
+# Graficamos:
+    
+grados_er = np.asarray(red_er_4.degree())[:,1]
+
+#grados_er_log = np.log10(grados_er)
+
+#bins_er = np.logspace(np.min(grados_er), np.max(grados_er), 13)
+
+bins_er = np.arange(np.min(grados_er), np.max(grados_er)+1, 1)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_er, bins = bins_er, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+#plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Erdos-Renyi simulando la red "yeast_Y2H" ')
+
+plt.xlabel('k (linear scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+
+'''
+Análogo a los casos anteriores. Se observa una curva tipo Poisson.
+'''
+
+#%%
+
+grados_rand = np.asarray(red_rand_4.degree())[:,1]
+
+grados_rand_log = np.log10(grados_rand)
+
+bins_rand = np.logspace(np.min(grados_rand_log), np.max(grados_rand_log), 18)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_rand, bins = bins_rand, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Random simulando la red "yeast_Y2H" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+
+#%%
+
+grados_barab = np.asarray(red_barab_4.degree())[:,1]
+
+grados_barab_log = np.log10(grados_barab)
+
+bins_barab = np.logspace(np.min(grados_barab_log), np.max(grados_barab_log), 13)
+
+plt.figure()
+    
+hist, bins, bars = plt.hist(grados_barab, bins = bins_barab, align = 'mid', density = True, facecolor='blue', alpha=0.5, ec='black')
+
+plt.xscale('log')
+
+plt.yscale('log')
+
+plt.title('Distribución de grado para red tipo Barabasi simulando la red "yeast_Y2H" ')
+
+plt.xlabel('k (log scale)')
+
+plt.ylabel('P(k) (log scale)')
+
+plt.grid()
+
+plt.show()
+
+'''
+Si bien no sigue la tendencia libre de escala tan bien como en el caso anterior, se observa que se la red tipo Barabasi
+muestra este comportamiento de manera satisfactoria.
+'''
+
+'''
+Como conclusión final, se encuentra que las redes del tipo Random y Erdos-Renyi no son satisfactorias a la hora de predecir
+el comportamiento de las redes reales. En ninguna de las redes estudiadas de este tipo se generaron Hubs. Sin embargo,
+en las redes reales estos Hubs, o nodos de alto grado, si que aparecen. 
+Por su parte, las redes de tipo Barabasi, por construcción, establecen una mayor prioridad a la conexión de nuevos nodos
+con los demás de la red cuyos grados sean altos. Esto propicia no solo la aparición de Hubs, sino también un comportamiento
+libre de escala, el cual se observa en las redes reales.
+'''
 
 
 

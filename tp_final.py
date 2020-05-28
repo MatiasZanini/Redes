@@ -27,9 +27,40 @@ def nombre_post(file, h_post, n_post):
     
     n_i = n + nlen + 1 # Inicio del nombre
     
-    n_f = file.find('"', n_i)
+    n_f = file.find('"', n_i) # Fin del nombre
 
     return file[n_i : n_f]
+
+
+def fecha_post(file, date_file, h_date, n_date):
+    
+    h = file.find(h_date)
+    
+    n = file.find(n_date, h)
+    
+    n_i = file.find('>', n) + 1 # Inicio de la fecha
+    
+    n_f = file.find('<', n_i) # Fin de la fecha
+    
+    fecha_cruda = file[n_i : n_f]
+    
+    if fecha_cruda.find('h') > 0:
+        
+        fecha_2_list = [date_file.year, date_file.month, date_file.day, date_file.hour - [int(s) for s in fecha_cruda.split() if s.isdigit()][0]]
+        
+        if fecha_2_list[3] < 0:
+            
+            fecha = [date_file.year, date_file.month, date_file.day -1 , 24 + fecha_2_list[3]]
+            
+        else:
+            
+            fecha = fecha_2_list
+    
+    else:
+        
+        fecha = fecha_cruda
+    
+    return fecha
 
 
 def nombre_reacts(file, h_reacts, n_reacts):
@@ -73,9 +104,9 @@ def nombre_reacts(file, h_reacts, n_reacts):
 
 path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
 
-filename = 'fuente_completa_likes_1.html'
+filename = 'fuente_completa_likes_2.html'
 
-date_file = os.path.getctime(path+filename) # Objeto con la fecha y hora de la obtención de los datos. 
+date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con la fecha y hora de la obtención de los datos. 
 #Atributos: .year, .month, .day, .minute, .second
 
 '''
@@ -102,7 +133,7 @@ poster = nombre_post(file, h_post, n_post)
 
 reacters = nombre_reacts(file, h_reacts, n_reacts)
 
-
+fecha = fecha_post(file, date_file, h_date, n_date)
 
 
 

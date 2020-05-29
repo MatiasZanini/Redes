@@ -9,6 +9,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+#%%
+
+'''
+Funciones útiles
+'''
+
+
 def abrir_txt(nombre_archivo):
     archivo=open(nombre_archivo)
     data=[]
@@ -45,6 +52,9 @@ def abrir_esenciales(nombre_archivo):
         esenciales.append(linea[1])
     return(esenciales)
 
+
+#%%
+
 #ruta donde se encuentran los archivos descargados:
 path = 'D:/Redes 2020/TC03/data/'
 
@@ -72,6 +82,11 @@ for file in filename:
     grafo.add_edges_from(data) #agregamos los nodos y enlaces
     
     grafos.append( grafo ) #guardamos el grafo en un índice de la lista grafos
+
+#%%
+'''
+Tabla 1 de Zotenko
+'''
     
 tabla1=pd.DataFrame(index=filename,columns=['Nodos','Enlaces','<k>','<C>'])
 
@@ -91,9 +106,15 @@ for g in grafos:
     
     c=c+1
     
-tabla1.to_csv(save_path+'tabla_1.csv',encoding='utf-8')
+tabla1.to_csv(save_path+'tabla_1.csv', encoding='utf-8')
 
-tabla2=pd.DataFrame(index=filename,columns=filename)
+#%%
+'''
+Tabla 1 de Zotenko
+'''
+
+
+tabla2=pd.DataFrame(index=filename, columns=filename)
 
 #para ver los enlaces en común tenemos en cuenta que en una base de datos puede aparecer
 #(i,j) y en la otro (j,i).
@@ -116,7 +137,10 @@ for i in tabla2.index:
 
 tabla2.to_csv(save_path+'tabla_2.csv',encoding='utf-8')
 
-#vamos a reproducir la figura 1
+#%%
+'''
+Figura 1 de Zotenko
+'''
 
 #primero importamos las proteínas esenciales
 
@@ -153,3 +177,52 @@ plt.legend()
 plt.ylim((0,1))
 plt.show()
 plt.close()
+
+
+#%%
+
+'''
+Figura 3 de Zotenko
+'''
+
+
+
+
+
+
+
+
+'''
+Tabla 3 de Zotenko
+'''
+
+
+#%%
+
+'''
+Figura 2b de He
+'''
+
+
+
+
+
+
+
+
+'''
+Tabla 5 de Zotenko
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+

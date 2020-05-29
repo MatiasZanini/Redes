@@ -7,6 +7,7 @@ Created on Fri May 29 08:41:15 2020
 import networkx as nx
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 def abrir_txt(nombre_archivo):
     archivo=open(nombre_archivo)
@@ -121,10 +122,34 @@ tabla2.to_csv(save_path+'tabla_2.csv',encoding='utf-8')
 
 esenciales = abrir_esenciales(path+'Essential_ORFs_paperHe.txt')
 
+#Notas: en un momento divide por 0 eso hay que arregrarlo, tmb habría que iterar
+#más de 1 vez por si algunos hubs tienen igual grado y achicar el paso del
+#cutoff a 0.0001
+
+df=pd.DataFrame(index=filename,columns=['fraccion','cutoff'])
+cutoff=np.arange(0,1,0.01)
+h=0
 for g in grafos:
     grados=sorted(g.degree, key=lambda x: x[1], reverse=True)
-    cutoff=np.arange(0,len(grados))[::-1]
-    y=[]
+    hubs=[]
+    es=[]
     for i in cutoff:
-        y.append()
-        
+        hubs_count=int(round(i*len(grados)))
+        hubs.append(hubs_count)
+        grados_aux=grados[0:hubs_count]
+        c=0
+        for n,m in grados_aux:
+            if n in esenciales:
+                c=c+1
+        es.append(c)
+    df['fraccion'][filename[h]]=np.divide(es,hubs)
+    df['cutoff'][filename[h]]=cutoff
+    h=h+1
+
+plt.figure()
+for i in df.index:
+    plt.plot(df['cutoff'][i],df['fraccion'][i],label=i)
+plt.legend()
+plt.ylim((0,1))
+plt.show()
+plt.close()

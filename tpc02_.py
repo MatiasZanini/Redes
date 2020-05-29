@@ -36,6 +36,8 @@ Inciso a)
 
 path = 'D:/Redes 2020/TC02/TC02_data/' #Colocar la ruta donde están guardados los archivos
 
+path2='D:/Redes 2020/TC02/graficos/'
+
 filename=['as-22july06_edgelist','netscience_edgelist','power_enlaces','yeast_Y2H']
 
 grafos=[]
@@ -92,6 +94,8 @@ for i in np.arange(len(grafos)):
     
     plt.ylabel('P(k) (log scale)')
     
+    plt.savefig(path2+'hist_'+filename[i]+'.png')
+    
     plt.show()
     
     plt.close()
@@ -125,11 +129,13 @@ for i in np.arange(len(grafos)):
     plt.ylim((np.min(p_k)-10**-(abs(int(math.log10(np.min(p_k))))+1),np.max(p_k)+1))
     
     plt.title('Distribución de probabilidad '+filename[i])
-    
+        
     plt.xlabel('k (log scale)')
     
     plt.ylabel('P(k) (log scale)')
     
+    plt.savefig(path2+'scatter_'+filename[i]+'.png')
+
     plt.show()
     
     plt.close()
@@ -179,6 +185,8 @@ for i in np.arange(len(grafos)):
     plt.xlabel('k (log scale)')
     
     plt.ylabel('P(k) (log scale)')
+    
+    plt.savefig(path2+filename[i]+'_ajuste.png')
     
     plt.show()
     
@@ -553,6 +561,8 @@ plt.ylabel('Grado (k)')
 
 plt.xlabel('t (paso)')
 
+plt.savefig(path2+'kvst_5_95.png')
+
 plt.show()
 
 plt.close()
@@ -602,6 +612,8 @@ plt.legend(loc='upper left')
 plt.ylabel('Grado (k)')
 
 plt.xlabel('t/t0 (paso)')
+
+plt.savefig(path2+'kvst_5_95_fit.png')
 
 plt.show()
 

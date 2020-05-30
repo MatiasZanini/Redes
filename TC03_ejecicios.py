@@ -8,6 +8,8 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import random
+from tqdm import tqdm
 
 #%%
 
@@ -185,36 +187,73 @@ plt.close()
 Figura 3 de Zotenko
 '''
 
-'''
-para cada red
-    tomamos la componente gigante
-    
-    por cada nodo
-    
-        calculo centralidad
-    
-        elimino el nodo con mayor centralidad
-        
-        calculo componente gigante
-    
-    calculo centralidad
-    
-    elimino el nodo de mayor centralidad
-'''
+n_romper = 400 # Hasta cuantos nodos queremos romper la red
 
-centralidades = [nx.betweenness_centrality, nx.eigenvector_centrality, nx.closeness_centrality]
+def grado(G):
+    
+    return G.degree() # Definimos esta función auxiliar para automatizar su aplicación
 
+rand = []
 
+# Armamos una lista con las diferentes funciones de centralidad:
+centralidades = [nx.eigenvector_centrality, grado, rand, nx.betweenness_centrality, nx.closeness_centrality]
+
+data_gc = []
 
 for grafo in grafos:
     
-    gc_nodes = max(nx.connected_components(grafo), key=len) # Nodos de la componente gigante
+    print('Trabajando en una nueva red')
     
-    gc = grafo.subgraph(gc_nodes) # Creamos el subgrafo con la componente gigante
+    tamaños_gc = []
     
+    for centralidad in tqdm(centralidades):
+        
+        #print('Utilizando nueva centralidad')
+        
+        gc = grafo.copy() # Creamos una copia para no desarmar la red original
+        
+        tamaño_gc = []
+        
+        while len(gc.nodes()) > n_romper:
     
-
+            gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la componente gigante
+            
+            gc.remove_nodes_from([n for n in gc if n not in set(gc_nodes)]) # Creamos el subgrafo de la componente gigante
+            
+            tamaño_gc.append(len(gc.nodes()))
+            
+            if centralidad not in [grado, rand]:
+            
+                max_centralidad = max(centralidad(gc)) # Buscamos el nodo con el nodo de mayor centralidad 
+            
+            elif centralidad == grado:
+                    
+                max_centralidad = max(centralidad(gc))[0]
+                
+            else:
+                
+                max_centralidad = random.choice(list(gc.nodes()))
+                    
+            gc.remove_node(max_centralidad) # Eliminamos el nodo más central 
+            
+        tamaños_gc.append(tamaño_gc)
+        
+    data_gc.append(tamaños_gc)
+            
+            
+          
     
+'''
+NOTA: el eigenvector value no converge.
+
+    hay 2 modos que siempre dan igual para las dos centralidades diferentes.
+    
+    Idea:
+        separar por cada centralidad. Algo raro pasa al hacer todo junto
+
+
+
+'''
 
 
 
@@ -223,18 +262,17 @@ for grafo in grafos:
 
 
 
+# largest_cc = max(nx.connected_components(grafos[0]), key=len)
 
-largest_cc = max(nx.connected_components(grafos[0]), key=len)
+# G.remove_node(1)
 
-G.remove_node(1)
+# nx.betweenness_centrality()
 
-nx.betweenness_centrality()
+# nx.eigenvector_centrality()
 
-nx.eigenvector_centrality()
+# nx.closeness_centrality()
 
-nx.closeness_centrality()
-
-G.degree()
+# G.degree()
 
 
 

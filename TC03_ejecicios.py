@@ -56,9 +56,9 @@ def abrir_esenciales(nombre_archivo):
 #%%
 
 #ruta donde se encuentran los archivos descargados:
-path = 'D:/Redes 2020/TC03/data/'
+path = 'C:/Users/Mati/Documents/GitHub/Redes/tc3 data/'
 
-save_path='D:/Redes 2020/TC03/'
+save_path='C:/Users/Mati/Documents/GitHub/Redes/tc3 data/Resultados/'
 
 #lista con los nombres de los archivos:
 filename = ['yeast_Y2H','yeast_AP-MS','yeast_LIT','yeast_LIT_Reguly']
@@ -75,7 +75,7 @@ for file in filename:
         
     else:
         
-        data=abrir_reguly(nombre_archivo)
+        data = abrir_reguly(nombre_archivo)
         
     grafo = nx.Graph() #Inicializamos un grafo en cada paso de la iteración
         
@@ -185,10 +185,56 @@ plt.close()
 Figura 3 de Zotenko
 '''
 
+'''
+para cada red
+    tomamos la componente gigante
+    
+    por cada nodo
+    
+        calculo centralidad
+    
+        elimino el nodo con mayor centralidad
+        
+        calculo componente gigante
+    
+    calculo centralidad
+    
+    elimino el nodo de mayor centralidad
+'''
+
+centralidades = [nx.betweenness_centrality, nx.eigenvector_centrality, nx.closeness_centrality]
+
+
+
+for grafo in grafos:
+    
+    gc_nodes = max(nx.connected_components(grafo), key=len) # Nodos de la componente gigante
+    
+    gc = grafo.subgraph(gc_nodes) # Creamos el subgrafo con la componente gigante
+    
+    
+
+    
 
 
 
 
+
+
+
+
+
+largest_cc = max(nx.connected_components(grafos[0]), key=len)
+
+G.remove_node(1)
+
+nx.betweenness_centrality()
+
+nx.eigenvector_centrality()
+
+nx.closeness_centrality()
+
+G.degree()
 
 
 

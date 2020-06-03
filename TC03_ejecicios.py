@@ -187,7 +187,7 @@ plt.close()
 Figura 3 de Zotenko
 '''
 
-n_romper = 2 # Hasta cuantos nodos queremos romper la red
+n_romper = 1 # Hasta cuantos nodos queremos quedarnos tras romper la red
 
 # Armamos una lista con las diferentes funciones de centralidad:
 centralidades = [nx.eigenvector_centrality, 'grado', 'random', nx.betweenness_centrality, nx.closeness_centrality]
@@ -235,10 +235,16 @@ for grafo in grafos:
             elif centralidad == 'random':
                 
                 max_centralidad = random.choice(list(gc.nodes())) # Elegimos cualquier nodo al azar
+                
+            elif centralidad == nx.eigenvector_centrality:
+                
+                # Buscamos el nodo con el nodo de mayor centralidad:
+                max_centralidad = sorted(centralidad(gc, max_iter = 1000), key=lambda x: x[1], reverse=True)[0] 
             
             else: 
                 
-                max_centralidad = sorted(centralidad(gc), key=lambda x: x[1], reverse=True)[0] # Buscamos el nodo con el nodo de mayor centralidad 
+                # Buscamos el nodo con el nodo de mayor centralidad:
+                max_centralidad = sorted(centralidad(gc), key=lambda x: x[1], reverse=True)[0] 
                 
             
                     
@@ -272,51 +278,96 @@ NOTA: el eigenvector value no converge.
 
 #%%
 
-
 y2h, apms, lit, lit_reg = data_gc
+
+cont = 0
 
 plt.figure(1)
 
-cont = 0
-
 for i in y2h:
     
-    cont += 1
+    #x1 = len(grafos[cont].nodes()) - i[0]
     
-    plt.plot(np.asarray(i)/max(i), legend = centralidades_str[i])
-
-cont = 0
-
-
-plt.figure(2)
-
-cont = 0
-
-for i in apms:
+    x = []
     
-    cont += 1
+    for j in range(len(i)):
+        
+        x.append(i[0]-i[j])
+        
+    x = np.asarray(x)/i[0]
     
-    plt.plot(np.asarray(i)/max(i), legend = centralidades_str[i])
-    
-plt.figure(3)
-
-cont = 0
-
-for i in lit:
-    
-    cont += 1
-    
-    plt.plot(np.asarray(i)/max(i), legend = centralidades_str[i])
-
-cont = 0
-
-plt.figure(4)
-
-for i in lit_reg:
+    i = np.asarray(i)
     
     plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
     
-    plt.title('lit_reg')
+    plt.title('yeast_Y2H')
+    
+    plt.xlabel('fracción de nodos removidos')
+    
+    plt.ylabel('fracción del tamaño original de la C-G')
+    
+    plt.legend()
+
+    cont += 1
+
+
+cont = 0
+
+plt.figure(2)
+
+for i in apms:
+    
+    x = np.linspace(0, 1, len(i))
+    
+    i = np.asarray(i)
+    
+    plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
+    
+    plt.title('yeast_AP-MS')
+    
+    plt.xlabel('fracción de nodos removidos')
+    
+    plt.ylabel('fracción del tamaño original de la C-G')
+    
+    plt.legend()
+
+    cont += 1
+
+cont = 0
+
+plt.figure(3)
+
+for i in lit:
+    
+    x = np.linspace(0, 1, len(i))
+    
+    i = np.asarray(i)
+    
+    plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
+    
+    plt.title('yeast_LIT')
+    
+    plt.xlabel('fracción de nodos removidos')
+    
+    plt.ylabel('fracción del tamaño original de la C-G')
+    
+    plt.legend()
+
+    cont += 1
+
+plt.figure(4)
+
+cont = 0
+
+for i in lit_reg:
+    
+    i = np.asarray(i)
+    
+    x = np.linspace(0, 1, len(i))
+    
+    plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
+    
+    plt.title('yeast_LIT_Reguly')
     
     plt.xlabel('fracción de nodos removidos')
     

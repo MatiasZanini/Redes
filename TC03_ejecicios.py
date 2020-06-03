@@ -187,12 +187,17 @@ plt.close()
 Figura 3 de Zotenko
 '''
 
+#grafos = [grafos[0]]
+
+
 n_romper = 1 # Hasta cuantos nodos queremos quedarnos tras romper la red
 
 # Armamos una lista con las diferentes funciones de centralidad:
 centralidades = [nx.eigenvector_centrality, 'grado', 'random', nx.betweenness_centrality, nx.closeness_centrality]
-
+#centralidades = [nx.eigenvector_centrality, nx.betweenness_centrality]
 centralidades_str = ['autoval', 'grado', 'random', 'interm', 'cercania']
+
+centralidades_str = ['autoval', 'betweenness']
 
 data_gc = []
 
@@ -220,7 +225,9 @@ for grafo in grafos:
     
             gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la componente gigante
             
-            gc.remove_nodes_from([n for n in gc if n not in set(gc_nodes)]) # Creamos el subgrafo de la componente gigante
+            nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
+            
+            gc.remove_nodes_from(nodos_no_gc) # Creamos el subgrafo de la componente gigante
             
             if len(gc.nodes()) != len(gc_nodes):
                 
@@ -230,7 +237,7 @@ for grafo in grafos:
             
             if centralidad == 'grado':
                     
-                max_centralidad = sorted(gc.degree, key=lambda x: x[1], reverse=True)[0][0] # Tomamos el nodo de mayor grado
+                max_centralidad = sorted(dict(gc.degree()).items(), key=lambda x: x[1], reverse=True)[0][0] # Tomamos el nodo de mayor grado
                 
             elif centralidad == 'random':
                 
@@ -239,12 +246,12 @@ for grafo in grafos:
             elif centralidad == nx.eigenvector_centrality:
                 
                 # Buscamos el nodo con el nodo de mayor centralidad:
-                max_centralidad = sorted(centralidad(gc, max_iter = 1000), key=lambda x: x[1], reverse=True)[0] 
+                max_centralidad = sorted(centralidad(gc, max_iter = 10000).items(), key=lambda x: x[1], reverse=True)[0][0]
             
             else: 
                 
                 # Buscamos el nodo con el nodo de mayor centralidad:
-                max_centralidad = sorted(centralidad(gc), key=lambda x: x[1], reverse=True)[0] 
+                max_centralidad = sorted(centralidad(gc).items(), key=lambda x: x[1], reverse=True)[0][0]
                 
             
                     
@@ -279,26 +286,18 @@ NOTA: el eigenvector value no converge.
 #%%
 
 y2h, apms, lit, lit_reg = data_gc
-
+#y2h = data_gc[0]
 cont = 0
 
 plt.figure(1)
 
 for i in y2h:
+   
+    i = np.asarray(i) 
+   
+    x = np.linspace(1, max(i), len(i))/max(i)
     
-    #x1 = len(grafos[cont].nodes()) - i[0]
-    
-    x = []
-    
-    for j in range(len(i)):
-        
-        x.append(i[0]-i[j])
-        
-    x = np.asarray(x)/i[0]
-    
-    i = np.asarray(i)
-    
-    plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
+    plt.plot(x, i/max(i), label = centralidades_str[cont])
     
     plt.title('yeast_Y2H')
     
@@ -317,11 +316,11 @@ plt.figure(2)
 
 for i in apms:
     
-    x = np.linspace(0, 1, len(i))
-    
     i = np.asarray(i)
     
-    plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
+    x = np.linspace(1, max(i), len(i))/max(i)
+    
+    plt.plot(x, np.asarray(i)/max(i), label = centralidades_str[cont])
     
     plt.title('yeast_AP-MS')
     
@@ -339,11 +338,11 @@ plt.figure(3)
 
 for i in lit:
     
-    x = np.linspace(0, 1, len(i))
-    
     i = np.asarray(i)
+
+    x = np.linspace(1, max(i), len(i))/max(i)
     
-    plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
+    plt.plot(x, np.asarray(i)/max(i), label = centralidades_str[cont])
     
     plt.title('yeast_LIT')
     
@@ -361,11 +360,11 @@ cont = 0
 
 for i in lit_reg:
     
+    x = np.linspace(1, max(i), len(i))/max(i)
+    
     i = np.asarray(i)
     
-    x = np.linspace(0, 1, len(i))
-    
-    plt.plot(np.asarray(i)/max(i), label = centralidades_str[cont])
+    plt.plot(x, np.asarray(i)/max(i), label = centralidades_str[cont])
     
     plt.title('yeast_LIT_Reguly')
     
@@ -376,19 +375,6 @@ for i in lit_reg:
     plt.legend()
 
     cont += 1
-
-# largest_cc = max(nx.connected_components(grafos[0]), key=len)
-
-# G.remove_node(1)
-
-# nx.betweenness_centrality()
-
-# nx.eigenvector_centrality()
-
-# nx.closeness_centrality()
-
-# G.degree()
-
 
 
 '''

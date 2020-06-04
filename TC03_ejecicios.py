@@ -187,11 +187,6 @@ plt.close()
 Figura 3 de Zotenko
 '''
 
-#grafos = [grafos[0]]
-
-
-#n_romper = 1 # Hasta cuantos nodos queremos quedarnos tras romper la red
-
 # Armamos una lista con las diferentes funciones de centralidad:
 centralidades = [nx.degree_centrality, nx.eigenvector_centrality, 'random', nx.betweenness_centrality, nx.closeness_centrality]
 
@@ -199,9 +194,9 @@ centralidades_str = ['grado', 'autoval', 'random', 'interm', 'cercania']
 
 #Prueba con solo grado:
     
-centralidades = [nx.eigenvector_centrality]
+centralidades = [nx.degree_centrality, 'random']
 
-centralidades_str = ['autoval']
+centralidades_str = ['grado', 'random']
 
 data_completa = []
 
@@ -296,158 +291,113 @@ for grafo in grafos:
     nombre_grafo += 1    
     
     data_completa.append(centralidades_por_grafo)
-            
+    
+    
 #%%
 
-'''
-Figura 3 de Zotenko - sin recalcular centralidad a cada paso
-'''
-
-#grafos = [grafos[0]]
-
-
-#n_romper = 1 # Hasta cuantos nodos queremos quedarnos tras romper la red
-
-# Armamos una lista con las diferentes funciones de centralidad:
-centralidades = [nx.degree_centrality, nx.eigenvector_centrality, 'random', nx.betweenness_centrality, nx.closeness_centrality]
-
-centralidades_str = ['grado', 'autoval', 'random', 'interm', 'cercania']
-
-#Prueba con solo grado:
+# Eliminamos los escenciales:
     
-centralidades = [nx.eigenvector_centrality]
-
-centralidades_str = ['autoval']
-
-data_completa = []
+esenciales = abrir_esenciales(path+'Essential_ORFs_paperHe.txt')
 
 nombre_grafo = 0 # Contador para nombrar cada red
 
-for grafo in grafos:
+ruptura_esencial = []
+
+for grafo in grafos:      
     
-    print('Trabajando en la red', filename[nombre_grafo])
+    grafo_original = grafo.copy()
     
-    centralidades_por_grafo = []
-    
-    nombre_centr = 0 # Contador para nombrar cada analisis de centralidad
-    
-    for centralidad in tqdm(centralidades):
+    gc_componentes = sorted(nx.connected_components(grafo_original), key=len, reverse=True)
         
-        #print('Utilizando nueva centralidad')
-        
-        grafo_original = grafo.copy() # Creamos una copia para no desarmar la red original
-        
-        tamaño_gc = [1] # Paso cero. La fraccion tamaño_cg/tamaño_cg_original es 1
-        
-        nodos_remov = [0] # Paso cero. La fraccion nodos_removidos/nodos_totales_de_la_cg es 0
-        
-        gc_componentes = sorted(nx.connected_components(grafo_original), key=len, reverse=True)
-        
-        gc = grafo_original.subgraph(gc_componentes[0]).copy() # Esta es la componente gigante original
+    gc = grafo_original.subgraph(gc_componentes[0]).copy() # Esta es la componente gigante original
                 
-        N_gc_original = len(gc.nodes())
+    N_gc_original = len(gc.nodes())
+    
+    nodos_borrar = []
+    
+    for nodo_es in esenciales:
         
-        paso = 1
-        
-        while paso < N_gc_original/2:
+        if nodo_es in list(gc.nodes()):
             
-            if paso %10 ==0:
-                  
-                  print('Removidos', paso, 'nodos de', N_gc_original/2) # Mostramos el progreso de la iteración
-            
-            if len(gc.nodes()) != 0:
-                
-                if centralidad == 'random':
-                    
-                    max_centralidad = random.choice(list(gc.nodes())) # Elegimos cualquier nodo al azar
-                    
-                elif centralidad == nx.eigenvector_centrality:
-                    
-                    # Buscamos el nodo con mayor centralidad:
-                    max_centralidad = sorted(centralidad(gc, max_iter = 10000).items(), key=lambda x: x[1], reverse=True)[0][0]
-                
-                else: 
-                    
-                    # Buscamos el nodo con mayor centralidad:
-                    max_centralidad = sorted(centralidad(gc).items(), key=lambda x: x[1], reverse=True)[0][0]
-                    
-                gc.remove_node(max_centralidad) # Eliminamos el nodo más central 
-                
-                if len(gc.nodes()) !=0:
-                
-                    conectado = nx.is_connected(gc) # Chequeamos si rompimos la red. 
-                    
-                    if not conectado: # Si la red sigue conectada no es necesario crear un subgrafo.
+            nodos_borrar.append(nodo_es)
+    
+    gc.remove_nodes_from(nodos_borrar) # Borramos los nodos esenciales de la componente gigante
+     
+    gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la nueva componente gigante
                         
-                        # Recalculamos la componente gigante:
-                        gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la componente gigante
+    nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
                         
-                        nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
-                        
-                        gc.remove_nodes_from(nodos_no_gc) # Creamos el subgrafo de la componente gigante
-                        
-                        if len(gc.nodes()) != len(gc_nodes):
-                            
-                            raise ValueError('Los nodos de la CG no se eliminaron correctamente')
-            
-            tamaño_gc.append(len(gc.nodes()) / N_gc_original )
-            
-            nodos_remov.append(paso / N_gc_original)
-            
-            paso += 1
-           
+    gc.remove_nodes_from(nodos_no_gc) # Creamos el subgrafo de la componente gigante
+                       
+    if len(gc.nodes()) != len(gc_nodes):
+                           
+        raise ValueError('Los nodos de la CG no se eliminaron correctamente')
         
-        x_data = np.asarray(nodos_remov)
-        
-        y_data = np.asarray(tamaño_gc)
-        
-        data_centralidad = np.asarray([x_data, y_data])
-        
-        np.savetxt(save_path+filename[nombre_grafo]+'_'+centralidades_str[nombre_centr]+'.txt', data_centralidad)
-        
-        nombre_centr += 1
-        
-        centralidades_por_grafo.append(data_centralidad)
+    y_data = len(gc.nodes())/N_gc_original
     
-    nombre_grafo += 1    
+    x_data = len(nodos_borrar)/N_gc_original
     
-    data_completa.append(centralidades_por_grafo)
+    data_esencial = np.array([x_data, y_data])
+    
+    np.savetxt(save_path+filename[nombre_grafo]+'_escenciales.txt', data_esencial)
+   
+    ruptura_esencial.append(data_esencial)
+    
+    nombre_grafo +=1
+    
+#%%
 
+# Opcional: cargamos desde los archivos guardados
 
+y2h = []
 
+apms = []
 
+lit = []
 
+lit_reg = []
+  
+for nombre_centr in range(len(centralidades_str)):
+        
+    y2h.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt'))   
+
+for nombre_centr in range(len(centralidades_str)):
+        
+    apms.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt')) 
+
+for nombre_centr in range(len(centralidades_str)):
+    
+    lit.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt')) 
+
+for nombre_centr in range(len(centralidades_str)):
+        
+    lit_reg.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt'))     
+    
+    
+    
+    
 
 #%%
 
-'''
-Figura 3 Zotenko bis
-'''
-
-
-
-
-
-
-
-
-
+y2h, apms, lit, lit_reg = data_completa
 
 #%%
 
-y2h, apms, lit, lit_reg = data_gc
-#y2h = data_gc[0]
 cont = 0
 
 plt.figure(1)
 
-for i in y2h:
+gc_esencial = ruptura_esencial[0]
+
+plt.plot(gc_esencial[0], gc_esencial[1], 'p', markersize=15, label = 'Escenciales')
+
+for data in y2h:
    
-    i = np.asarray(i) 
-   
-    x = np.linspace(1, max(i), len(i))/max(i)
+    x = data[0]
     
-    plt.plot(x, i/max(i), label = centralidades_str[cont])
+    y = data[1]
+    
+    plt.plot(x, y, label = centralidades_str[cont])
     
     plt.title('yeast_Y2H')
     
@@ -464,13 +414,17 @@ cont = 0
 
 plt.figure(2)
 
-for i in apms:
+gc_esencial = ruptura_esencial[1]
+
+plt.plot(gc_esencial[0], gc_esencial[1], 'p', markersize=15, label = 'Escenciales')
+
+for data in apms:
     
-    i = np.asarray(i)
+    x = data[0]
     
-    x = np.linspace(1, max(i), len(i))/max(i)
+    y = data[1]
     
-    plt.plot(x, np.asarray(i)/max(i), label = centralidades_str[cont])
+    plt.plot(x, y, label = centralidades_str[cont])
     
     plt.title('yeast_AP-MS')
     
@@ -486,13 +440,17 @@ cont = 0
 
 plt.figure(3)
 
-for i in lit:
-    
-    i = np.asarray(i)
+gc_esencial = ruptura_esencial[2]
 
-    x = np.linspace(1, max(i), len(i))/max(i)
+plt.plot(gc_esencial[0], gc_esencial[1], 'p', markersize=15, label = 'Escenciales')
+
+for data in lit:
     
-    plt.plot(x, np.asarray(i)/max(i), label = centralidades_str[cont])
+    x = data[0]
+    
+    y = data[1]
+    
+    plt.plot(x, y, label = centralidades_str[cont])
     
     plt.title('yeast_LIT')
     
@@ -506,15 +464,19 @@ for i in lit:
 
 plt.figure(4)
 
+gc_esencial = ruptura_esencial[3]
+
+plt.plot(gc_esencial[0], gc_esencial[1], 'p', markersize=15, label = 'Escenciales')
+
 cont = 0
 
-for i in lit_reg:
+for data in lit_reg:
     
-    x = np.linspace(1, max(i), len(i))/max(i)
+    x = data[0]
     
-    i = np.asarray(i)
+    y = data[1]
     
-    plt.plot(x, np.asarray(i)/max(i), label = centralidades_str[cont])
+    plt.plot(x, y, label = centralidades_str[cont])
     
     plt.title('yeast_LIT_Reguly')
     
@@ -526,10 +488,41 @@ for i in lit_reg:
 
     cont += 1
 
+#%%
 
 '''
 Tabla 3 de Zotenko
 '''
+
+tabla_esenciales = pd.DataFrame(index = filename, columns=['Nodos esenciales','Al azar'])
+
+for i in range(len(filename)):
+    
+    tabla_esenciales['Nodos esenciales'][filename[i]] = ruptura_esencial[i][1]
+
+
+
+for grafo in grafos:
+
+    grafo_original = grafo.copy()
+        
+    gc_componentes = sorted(nx.connected_components(grafo_original), key=len, reverse=True)
+            
+    gc_original = grafo_original.subgraph(gc_componentes[0]).copy() # Esta es la componente gigante original
+                    
+    N_gc_original = len(gc_original.nodes())
+
+    nodos_borrar = []
+    
+    for nodo_es in esenciales:
+        
+        if nodo_es in list(gc.nodes()):
+            
+            nodos_borrar.append(nodo_es)
+
+
+
+
 
 
 #%%

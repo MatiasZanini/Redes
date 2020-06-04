@@ -194,9 +194,9 @@ centralidades_str = ['grado', 'autoval', 'random', 'interm', 'cercania']
 
 #Prueba con solo grado:
     
-centralidades = [nx.degree_centrality, 'random']
+# centralidades = [nx.closeness_centrality]
 
-centralidades_str = ['grado', 'random']
+# centralidades_str = ['cercania']
 
 data_completa = []
 
@@ -358,22 +358,24 @@ lit = []
 lit_reg = []
   
 for nombre_centr in range(len(centralidades_str)):
-        
-    y2h.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt'))   
+    
+    # Reemplazamos filename[i] con i el numero del archivo que quiero abrir. Cambiarlo pisara los anteriores
+    
+    y2h.append(np.loadtxt(save_path+filename[3]+'_'+centralidades_str[nombre_centr]+'.txt'))   
 
 for nombre_centr in range(len(centralidades_str)):
         
-    apms.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt')) 
+    apms.append(np.loadtxt(save_path+filename[3]+'_'+centralidades_str[nombre_centr]+'.txt')) 
 
 for nombre_centr in range(len(centralidades_str)):
     
-    lit.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt')) 
+    lit.append(np.loadtxt(save_path+filename[3]+'_'+centralidades_str[nombre_centr]+'.txt')) 
 
 for nombre_centr in range(len(centralidades_str)):
         
-    lit_reg.append(np.loadtxt(save_path+filename[0]+'_'+centralidades_str[nombre_centr]+'.txt'))     
+    lit_reg.append(np.loadtxt(save_path+filename[3]+'_'+centralidades_str[nombre_centr]+'.txt'))     
     
-    
+
     
     
 
@@ -409,7 +411,8 @@ for data in y2h:
 
     cont += 1
 
-
+plt.grid()
+#%%
 cont = 0
 
 plt.figure(2)
@@ -436,11 +439,16 @@ for data in apms:
 
     cont += 1
 
+plt.grid()
+
+#%%
 cont = 0
 
 plt.figure(3)
 
 gc_esencial = ruptura_esencial[2]
+
+plt.grid()
 
 plt.plot(gc_esencial[0], gc_esencial[1], 'p', markersize=15, label = 'Escenciales')
 
@@ -462,6 +470,7 @@ for data in lit:
 
     cont += 1
 
+#%%
 plt.figure(4)
 
 gc_esencial = ruptura_esencial[3]
@@ -469,6 +478,8 @@ gc_esencial = ruptura_esencial[3]
 plt.plot(gc_esencial[0], gc_esencial[1], 'p', markersize=15, label = 'Escenciales')
 
 cont = 0
+
+plt.grid()
 
 for data in lit_reg:
     
@@ -576,7 +587,7 @@ for grafo in grafos:
         # nodos esenciales. En caso de que la lista sea menor a la cantidad que se neecista por la distribucion de grado,
         # se rellena con nodos esenciales, los cuales podran ser borrados "como si fueran no esenciales"
     
-    iteraciones = 5
+    iteraciones = 50 # Cantidad de veces que queremos iterar para luego promediar
     
     tamaños_gc = []
     
@@ -643,73 +654,6 @@ print(tabla_esenciales)
 print(tabla_esenciales.to_latex())
     
 
-#%%
-
-'''
-Figura 3 de Zotenko -  Cami
-'''
-
-df_grado=pd.DataFrame(index=filename,columns=['x','y'])
-
-h=0
-
-#por grado
-for g in grafos:
-
-    #separamos la componente gigante
-    copia = g.copy()
-
-    Gcc = sorted(nx.connected_components(copia), key=len, reverse=True)
-
-    original=len(Gcc[0])
-
-    sub_g=copia.subgraph(Gcc[0]).copy()
-
-    #por grado
-    y=[1]
-
-    x=[0]
-
-    n=1
-
-    while n<original/2:
-
-        medida = nx.degree_centrality(copia)
-
-        #en medida orden tenemos solo los nombres de la proteína
-        medida_orden=[key for key, value in sorted(medida.items(), key=lambda item: item[1], reverse=True)]
-
-        #saco el nodo de mayor centralidad
-        copia.remove_node(medida_orden[0])
-        
-        if medida_orden[0] in list(sub_g.nodes()):
-            
-            sub_g.remove_node(medida_orden[0])
-            
-            #recalculo la componente gigente
-            Gcc_2 = sorted(nx.connected_components(sub_g), key=len, reverse=True)
-            
-            #computo de nuevo sub_g
-            sub_g=sub_g.subgraph(Gcc_2[0]).copy()
-            
-            #guardo los resultados
-            y.append(len(Gcc_2[0])/original)
-        
-        else:
-        
-            y.append(y[n-1])
-        
-        x.append(n/original)
-        
-        n=n+1
-    
-    df_grado['x'][filename[h]]=x
-    
-    df_grado['y'][filename[h]]=y
-    
-    h=h+1
-
-df_grado.to_pickle(save_path+'centralidades/centralidad_grado.p')
 
 
 #%%

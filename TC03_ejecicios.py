@@ -190,97 +190,247 @@ Figura 3 de Zotenko
 #grafos = [grafos[0]]
 
 
-n_romper = 1 # Hasta cuantos nodos queremos quedarnos tras romper la red
+#n_romper = 1 # Hasta cuantos nodos queremos quedarnos tras romper la red
 
 # Armamos una lista con las diferentes funciones de centralidad:
-centralidades = [nx.eigenvector_centrality, 'grado', 'random', nx.betweenness_centrality, nx.closeness_centrality]
-#centralidades = [nx.eigenvector_centrality, nx.betweenness_centrality]
-centralidades_str = ['autoval', 'grado', 'random', 'interm', 'cercania']
+centralidades = [nx.degree_centrality, nx.eigenvector_centrality, 'random', nx.betweenness_centrality, nx.closeness_centrality]
 
-centralidades_str = ['autoval', 'betweenness']
+centralidades_str = ['grado', 'autoval', 'random', 'interm', 'cercania']
 
-data_gc = []
+#Prueba con solo grado:
+    
+centralidades = [nx.eigenvector_centrality]
 
-nombre_grafo = 0
+centralidades_str = ['autoval']
 
+data_completa = []
 
+nombre_grafo = 0 # Contador para nombrar cada red
 
 for grafo in grafos:
     
-    print('Trabajando en una nueva red')
+    print('Trabajando en la red', filename[nombre_grafo])
     
-    tamaños_gc = []
+    centralidades_por_grafo = []
     
-    nombre_centr = 0
+    nombre_centr = 0 # Contador para nombrar cada analisis de centralidad
     
     for centralidad in tqdm(centralidades):
         
         #print('Utilizando nueva centralidad')
         
-        gc = grafo.copy() # Creamos una copia para no desarmar la red original
+        grafo_original = grafo.copy() # Creamos una copia para no desarmar la red original
         
-        tamaño_gc = []
+        tamaño_gc = [1] # Paso cero. La fraccion tamaño_cg/tamaño_cg_original es 1
         
-        while len(gc.nodes()) > n_romper:
-    
-            gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la componente gigante
-            
-            nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
-            
-            gc.remove_nodes_from(nodos_no_gc) # Creamos el subgrafo de la componente gigante
-            
-            if len(gc.nodes()) != len(gc_nodes):
+        nodos_remov = [0] # Paso cero. La fraccion nodos_removidos/nodos_totales_de_la_cg es 0
+        
+        gc_componentes = sorted(nx.connected_components(grafo_original), key=len, reverse=True)
+        
+        gc = grafo_original.subgraph(gc_componentes[0]).copy() # Esta es la componente gigante original
                 
-                raise ValueError('Los nodos de la CG no se eliminaron correctamente')
+        N_gc_original = len(gc.nodes())
+        
+        paso = 1
+        
+        while paso < N_gc_original/2:
             
-            tamaño_gc.append(len(gc.nodes()))
+            if paso %10 ==0:
+                  
+                  print('Removidos', paso, 'nodos de', N_gc_original/2) # Mostramos el progreso de la iteración
             
-            if centralidad == 'grado':
+            if len(gc.nodes()) != 0:
+                
+                if centralidad == 'random':
                     
-                max_centralidad = sorted(dict(gc.degree()).items(), key=lambda x: x[1], reverse=True)[0][0] # Tomamos el nodo de mayor grado
-                
-            elif centralidad == 'random':
-                
-                max_centralidad = random.choice(list(gc.nodes())) # Elegimos cualquier nodo al azar
-                
-            elif centralidad == nx.eigenvector_centrality:
-                
-                # Buscamos el nodo con el nodo de mayor centralidad:
-                max_centralidad = sorted(centralidad(gc, max_iter = 10000).items(), key=lambda x: x[1], reverse=True)[0][0]
-            
-            else: 
-                
-                # Buscamos el nodo con el nodo de mayor centralidad:
-                max_centralidad = sorted(centralidad(gc).items(), key=lambda x: x[1], reverse=True)[0][0]
-                
-            
+                    max_centralidad = random.choice(list(gc.nodes())) # Elegimos cualquier nodo al azar
                     
-            gc.remove_node(max_centralidad) # Eliminamos el nodo más central 
+                elif centralidad == nx.eigenvector_centrality:
+                    
+                    # Buscamos el nodo con mayor centralidad:
+                    max_centralidad = sorted(centralidad(gc, max_iter = 10000).items(), key=lambda x: x[1], reverse=True)[0][0]
+                
+                else: 
+                    
+                    # Buscamos el nodo con mayor centralidad:
+                    max_centralidad = sorted(centralidad(gc).items(), key=lambda x: x[1], reverse=True)[0][0]
+                    
+                gc.remove_node(max_centralidad) # Eliminamos el nodo más central 
+                
+                if len(gc.nodes()) !=0:
+                
+                    conectado = nx.is_connected(gc) # Chequeamos si rompimos la red. 
+                    
+                    if not conectado: # Si la red sigue conectada no es necesario crear un subgrafo.
+                        
+                        # Recalculamos la componente gigante:
+                        gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la componente gigante
+                        
+                        nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
+                        
+                        gc.remove_nodes_from(nodos_no_gc) # Creamos el subgrafo de la componente gigante
+                        
+                        if len(gc.nodes()) != len(gc_nodes):
+                            
+                            raise ValueError('Los nodos de la CG no se eliminaron correctamente')
+            
+            tamaño_gc.append(len(gc.nodes()) / N_gc_original )
+            
+            nodos_remov.append(paso / N_gc_original)
+            
+            paso += 1
+           
         
-        np.savetxt(save_path+filename[nombre_grafo]+'_'+centralidades_str[nombre_centr]+'.txt', np.asarray(tamaño_gc))
+        x_data = np.asarray(nodos_remov)
+        
+        y_data = np.asarray(tamaño_gc)
+        
+        data_centralidad = np.asarray([x_data, y_data])
+        
+        np.savetxt(save_path+filename[nombre_grafo]+'_'+centralidades_str[nombre_centr]+'.txt', data_centralidad)
         
         nombre_centr += 1
         
-        tamaños_gc.append(tamaño_gc)
+        centralidades_por_grafo.append(data_centralidad)
     
     nombre_grafo += 1    
     
-    data_gc.append(tamaños_gc)
+    data_completa.append(centralidades_por_grafo)
             
-            
-          
-    
-'''
-NOTA: el eigenvector value no converge.
-
-    hay 2 modos que siempre dan igual para las dos centralidades diferentes.
-    
-    Idea:
-        separar por cada centralidad. Algo raro pasa al hacer todo junto
-
-
+#%%
 
 '''
+Figura 3 de Zotenko - sin recalcular centralidad a cada paso
+'''
+
+#grafos = [grafos[0]]
+
+
+#n_romper = 1 # Hasta cuantos nodos queremos quedarnos tras romper la red
+
+# Armamos una lista con las diferentes funciones de centralidad:
+centralidades = [nx.degree_centrality, nx.eigenvector_centrality, 'random', nx.betweenness_centrality, nx.closeness_centrality]
+
+centralidades_str = ['grado', 'autoval', 'random', 'interm', 'cercania']
+
+#Prueba con solo grado:
+    
+centralidades = [nx.eigenvector_centrality]
+
+centralidades_str = ['autoval']
+
+data_completa = []
+
+nombre_grafo = 0 # Contador para nombrar cada red
+
+for grafo in grafos:
+    
+    print('Trabajando en la red', filename[nombre_grafo])
+    
+    centralidades_por_grafo = []
+    
+    nombre_centr = 0 # Contador para nombrar cada analisis de centralidad
+    
+    for centralidad in tqdm(centralidades):
+        
+        #print('Utilizando nueva centralidad')
+        
+        grafo_original = grafo.copy() # Creamos una copia para no desarmar la red original
+        
+        tamaño_gc = [1] # Paso cero. La fraccion tamaño_cg/tamaño_cg_original es 1
+        
+        nodos_remov = [0] # Paso cero. La fraccion nodos_removidos/nodos_totales_de_la_cg es 0
+        
+        gc_componentes = sorted(nx.connected_components(grafo_original), key=len, reverse=True)
+        
+        gc = grafo_original.subgraph(gc_componentes[0]).copy() # Esta es la componente gigante original
+                
+        N_gc_original = len(gc.nodes())
+        
+        paso = 1
+        
+        while paso < N_gc_original/2:
+            
+            if paso %10 ==0:
+                  
+                  print('Removidos', paso, 'nodos de', N_gc_original/2) # Mostramos el progreso de la iteración
+            
+            if len(gc.nodes()) != 0:
+                
+                if centralidad == 'random':
+                    
+                    max_centralidad = random.choice(list(gc.nodes())) # Elegimos cualquier nodo al azar
+                    
+                elif centralidad == nx.eigenvector_centrality:
+                    
+                    # Buscamos el nodo con mayor centralidad:
+                    max_centralidad = sorted(centralidad(gc, max_iter = 10000).items(), key=lambda x: x[1], reverse=True)[0][0]
+                
+                else: 
+                    
+                    # Buscamos el nodo con mayor centralidad:
+                    max_centralidad = sorted(centralidad(gc).items(), key=lambda x: x[1], reverse=True)[0][0]
+                    
+                gc.remove_node(max_centralidad) # Eliminamos el nodo más central 
+                
+                if len(gc.nodes()) !=0:
+                
+                    conectado = nx.is_connected(gc) # Chequeamos si rompimos la red. 
+                    
+                    if not conectado: # Si la red sigue conectada no es necesario crear un subgrafo.
+                        
+                        # Recalculamos la componente gigante:
+                        gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la componente gigante
+                        
+                        nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
+                        
+                        gc.remove_nodes_from(nodos_no_gc) # Creamos el subgrafo de la componente gigante
+                        
+                        if len(gc.nodes()) != len(gc_nodes):
+                            
+                            raise ValueError('Los nodos de la CG no se eliminaron correctamente')
+            
+            tamaño_gc.append(len(gc.nodes()) / N_gc_original )
+            
+            nodos_remov.append(paso / N_gc_original)
+            
+            paso += 1
+           
+        
+        x_data = np.asarray(nodos_remov)
+        
+        y_data = np.asarray(tamaño_gc)
+        
+        data_centralidad = np.asarray([x_data, y_data])
+        
+        np.savetxt(save_path+filename[nombre_grafo]+'_'+centralidades_str[nombre_centr]+'.txt', data_centralidad)
+        
+        nombre_centr += 1
+        
+        centralidades_por_grafo.append(data_centralidad)
+    
+    nombre_grafo += 1    
+    
+    data_completa.append(centralidades_por_grafo)
+
+
+
+
+
+
+#%%
+
+'''
+Figura 3 Zotenko bis
+'''
+
+
+
+
+
+
+
+
 
 
 #%%
@@ -385,6 +535,75 @@ Tabla 3 de Zotenko
 #%%
 
 '''
+Figura 3 de Zotenko -  Cami
+'''
+
+df_grado=pd.DataFrame(index=filename,columns=['x','y'])
+
+h=0
+
+#por grado
+for g in grafos:
+
+    #separamos la componente gigante
+    copia = g.copy()
+
+    Gcc = sorted(nx.connected_components(copia), key=len, reverse=True)
+
+    original=len(Gcc[0])
+
+    sub_g=copia.subgraph(Gcc[0]).copy()
+
+    #por grado
+    y=[1]
+
+    x=[0]
+
+    n=1
+
+    while n<original/2:
+
+        medida = nx.degree_centrality(copia)
+
+        #en medida orden tenemos solo los nombres de la proteína
+        medida_orden=[key for key, value in sorted(medida.items(), key=lambda item: item[1], reverse=True)]
+
+        #saco el nodo de mayor centralidad
+        copia.remove_node(medida_orden[0])
+        
+        if medida_orden[0] in list(sub_g.nodes()):
+            
+            sub_g.remove_node(medida_orden[0])
+            
+            #recalculo la componente gigente
+            Gcc_2 = sorted(nx.connected_components(sub_g), key=len, reverse=True)
+            
+            #computo de nuevo sub_g
+            sub_g=sub_g.subgraph(Gcc_2[0]).copy()
+            
+            #guardo los resultados
+            y.append(len(Gcc_2[0])/original)
+        
+        else:
+        
+            y.append(y[n-1])
+        
+        x.append(n/original)
+        
+        n=n+1
+    
+    df_grado['x'][filename[h]]=x
+    
+    df_grado['y'][filename[h]]=y
+    
+    h=h+1
+
+df_grado.to_pickle(save_path+'centralidades/centralidad_grado.p')
+
+
+#%%
+
+'''
 Figura 2b de He
 '''
 
@@ -392,9 +611,7 @@ Figura 2b de He
 
 
 
-
-
-
+#%%
 '''
 Tabla 5 de Zotenko
 '''

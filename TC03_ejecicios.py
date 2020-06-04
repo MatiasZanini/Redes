@@ -500,7 +500,8 @@ for i in range(len(filename)):
     
     tabla_esenciales['Nodos esenciales'][filename[i]] = ruptura_esencial[i][1]
 
-
+#%%
+al_azar = []
 
 for grafo in grafos:
 
@@ -512,18 +513,135 @@ for grafo in grafos:
                     
     N_gc_original = len(gc_original.nodes())
 
-    nodos_borrar = []
+    esenciales_gc = []
     
     for nodo_es in esenciales:
         
-        if nodo_es in list(gc.nodes()):
+        if nodo_es in list(gc_original.nodes()):
             
-            nodos_borrar.append(nodo_es)
+            esenciales_gc.append(nodo_es)
 
+    esenciales_grados = sorted(gc_original.degree(esenciales_gc), key=lambda x: x[1], reverse=False)
 
+    esenciales_grados_val = [grado for (nodo, grado) in esenciales_grados]
+    
+    esenciales_grados_nodo = [nodo for (nodo, grado) in esenciales_grados]
+    
+    bineo = np.arange(0,max(esenciales_grados_val)+1)
+    
+    distrib, bineo = np.histogram(esenciales_grados_val, bins = bineo)
+    
+    # distrib contiene la cantidad de nodos esenciales de grado i en su componente i-esima, salvo la ultima. 
+    # La ultima se encuentra corrida de forma que distrib[len(distrib)] = distrib[len(distrib)-1]
+    
+    grados_a_borrar = list( np.where(distrib!=0)[0]) # Lista con los grados que tenemos que eliminar
+    
+    listas_grados_random = []
+    
+    nodos_no_esenciales = set(gc_original.nodes()) - set(esenciales_grados_nodo)
+    
+    grados_no_esenciales = list(gc_original.degree(nodos_no_esenciales)) # Grados de los nodos no esenciales
+    
+    for i in grados_a_borrar:
+        
+        if i == max(grados_a_borrar): # Solucionamos el corrimiento del ultimo valor en distrib
+            indice_para_distrib = i-1
+        
+        else:
+            
+            indice_para_distrib = i
+        
+        
+        lista_grado_i = []
+        
+        for grado in grados_no_esenciales:
+            
+            if grado[1] == i:
+                
+                lista_grado_i.append(grado[0])
+        
+        if len(lista_grado_i) < distrib[indice_para_distrib]:  # Si tengo menos nodos no esenciales de grado i que esenciales, relleno con esenciales
+            
+            index = list(np.where(np.asarray(esenciales_grados_val)==i)[0])
+            
+            for j in index:
+                
+                while len(lista_grado_i) < distrib[indice_para_distrib]:
+                
+                # Rellenamos los nodos no esenciales que faltan con nodos esenciales:
+                    lista_grado_i.append(esenciales_grados_nodo[j]) 
+            
+        listas_grados_random.append(lista_grado_i) 
+        # Cada elemento de listas_grados_random contiene una lista con los nodos no esenciales de grado igual a los
+        # nodos esenciales. En caso de que la lista sea menor a la cantidad que se neecista por la distribucion de grado,
+        # se rellena con nodos esenciales, los cuales podran ser borrados "como si fueran no esenciales"
+    
+    iteraciones = 5
+    
+    tamaños_gc = []
+    
+    for iteracion in range(iteraciones):
+    
+        gc = gc_original.copy()
+        
+        nodos_a_borrar = []
+        
+        numero_grado = 0
+        
+        for borrable in listas_grados_random:
+            
+            if grados_a_borrar[numero_grado] == max(grados_a_borrar):
+                
+                indice_para_distrib = grados_a_borrar[numero_grado] -1
+        
+            else:
+            
+                indice_para_distrib = grados_a_borrar[numero_grado]
+            
+            cantidad_a_borrar = distrib[indice_para_distrib] # Cuantos nodos del grado del paso actual hay que borrar
+            
+            a_borrar = random.sample(borrable, cantidad_a_borrar)
+            
+            nodos_a_borrar = nodos_a_borrar + a_borrar
+            
+            numero_grado +=1
+        
+        gc.remove_nodes_from(nodos_a_borrar)
+        
+        gc_nodes = max(nx.connected_components(gc), key = len) # Nodos de la nueva componente gigante
+                            
+        nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
+                            
+        gc.remove_nodes_from(nodos_no_gc) # Creamos el subgrafo de la componente gigante
+                           
+        if len(gc.nodes()) != len(gc_nodes):
+                               
+            raise ValueError('Los nodos de la CG no se eliminaron correctamente')
+        
+        tamaño_gc = len(gc.nodes())/N_gc_original
+        
+        tamaños_gc.append(tamaño_gc)
+    
+    tamaño_random = np.mean(tamaños_gc)
+    
+    desviacion = np.std(tamaños_gc)
+    
+    al_azar.append([[tamaño_random], [desviacion]])
+    
+    
+for i in range(len(filename)):
+    
+    tabla_esenciales['Al azar'][filename[i]] = str(( float(al_azar[i][0][0]) )) + ' \pm ' + str( float(al_azar[i][1][0]) )
 
+print(tabla_esenciales)
 
+#%%
 
+#Para pasar la tabla a latex:
+
+    
+print(tabla_esenciales.to_latex())
+    
 
 #%%
 

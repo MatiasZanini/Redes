@@ -1,15 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Created on Fri May 29 08:41:15 2020
+                **Introducción a Redes Complejas en Biología de Sistemas**
+                        Trabajo Computacional 3 (Entrega 05/06)
 
-@author: sanz1
+
+Grupo: Camila Sanz y Matías Zanini.
 """
+################################################################################
+#                                 PAQUETES 
+################################################################################
 import networkx as nx
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import random
 from tqdm import tqdm
+from collections import Counter
+from sklearn.linear_model import LinearRegression
+from scipy.stats import pearsonr
+
 
 #%%
 
@@ -55,12 +64,13 @@ def abrir_esenciales(nombre_archivo):
     return(esenciales)
 
 
-#%%
-
 #ruta donde se encuentran los archivos descargados:
-path = 'C:/Users/Mati/Documents/GitHub/Redes/tc3 data/'
+path = 'D:/Redes 2020/TC03/data/'
 
-save_path='C:/Users/Mati/Documents/GitHub/Redes/tc3 data/Resultados/'
+save_path='D:/Redes 2020/TC03/'
+
+#nombres de las redes (solo por estética)
+names=['Y2H','AP-MS','LIT','LIT Reguly']
 
 #lista con los nombres de los archivos:
 filename = ['yeast_Y2H','yeast_AP-MS','yeast_LIT','yeast_LIT_Reguly']
@@ -77,7 +87,7 @@ for file in filename:
         
     else:
         
-        data = abrir_reguly(nombre_archivo)
+        data=abrir_reguly(nombre_archivo)
         
     grafo = nx.Graph() #Inicializamos un grafo en cada paso de la iteración
         
@@ -87,7 +97,7 @@ for file in filename:
 
 #%%
 '''
-Tabla 1 de Zotenko
+Tabla 2 de Zotenko
 '''
     
 tabla1=pd.DataFrame(index=filename,columns=['Nodos','Enlaces','<k>','<C>'])
@@ -115,26 +125,37 @@ tabla1.to_csv(save_path+'tabla_1.csv', encoding='utf-8')
 Tabla 1 de Zotenko
 '''
 
-
 tabla2=pd.DataFrame(index=filename, columns=filename)
 
-#para ver los enlaces en común tenemos en cuenta que en una base de datos puede aparecer
-#(i,j) y en la otro (j,i).
+#Para ver los enlaces en común, tenemos en cuenta que en una base de datos 
+#puede aparecer (i,j) y en la otra (j,i).
 
 for i in np.arange(0,len(grafos)):
+    
     for j in np.arange(i+1,len(grafos)):
+        
         c=0
+        
         for n in grafos[i].edges:
+            
             if n in grafos[j].edges:
+            
                 c=c+1
+            
             elif n[::-1] in grafos[j].edges:
+            
                 c=c+1
+        
         tabla2[filename[j]][filename[i]]=c/tabla1['Enlaces'][filename[i]]
+        
         tabla2[filename[i]][filename[j]]=c/tabla1['Enlaces'][filename[j]]
 
 tabla2.columns = list(np.arange(len(filename)))
+
 tabla2.reset_index(drop=True,inplace=True)
+
 for i in tabla2.index:
+    
     tabla2[i][i]=filename[i]
 
 tabla2.to_csv(save_path+'tabla_2.csv',encoding='utf-8')
@@ -145,43 +166,80 @@ Figura 1 de Zotenko
 '''
 
 #primero importamos las proteínas esenciales
-
 esenciales = abrir_esenciales(path+'Essential_ORFs_paperHe.txt')
 
-#Notas: en un momento divide por 0 eso hay que arregrarlo, tmb habría que iterar
-#más de 1 vez por si algunos hubs tienen igual grado y achicar el paso del
-#cutoff a 0.0001
-
 df=pd.DataFrame(index=filename,columns=['fraccion','cutoff'])
-cutoff=np.arange(0,1,0.01)
+
+cutoff=np.arange(0,1,0.001)
+
 h=0
+
 for g in grafos:
+    
     grados=sorted(g.degree, key=lambda x: x[1], reverse=True)
+    
     hubs=[]
+    
     es=[]
+    
     for i in cutoff:
+        
         hubs_count=int(round(i*len(grados)))
+        
         hubs.append(hubs_count)
+        
         grados_aux=grados[0:hubs_count]
+        
         c=0
+        
         for n,m in grados_aux:
+            
             if n in esenciales:
+                
                 c=c+1
+        
         es.append(c)
+    
     df['fraccion'][filename[h]]=np.divide(es,hubs)
+    
     df['cutoff'][filename[h]]=cutoff
+    
     h=h+1
 
-plt.figure()
+h=0
+
+fig, ax = plt.subplots()
+
 for i in df.index:
-    plt.plot(df['cutoff'][i],df['fraccion'][i],label=i)
-plt.legend()
+    
+    plt.plot(df['cutoff'][i],df['fraccion'][i],label=names[h])
+    
+    h=h+1
+
+plt.legend(fontsize=12)
+
 plt.ylim((0,1))
+
+plt.xlim((0,1))
+
+plt.ylabel('Fracción de nodos esenciales',fontsize=15)
+
+plt.xlabel('Fracción de hubs',fontsize=15)
+
+plt.yticks(np.arange(0.2, 1.2, step=0.2))
+
+plt.grid()
+
+ax.tick_params(axis='both', labelsize=15)
+
+plt.savefig(save_path+'Figura 1 Zotenko.png',bbox_inches='tight')
+
 plt.show()
+
 plt.close()
 
-
 #%%
+
 
 '''
 Figura 3 de Zotenko
@@ -661,16 +719,234 @@ print(tabla_esenciales.to_latex())
 '''
 Figura 2b de He
 '''
+model = LinearRegression()#para hacer el ajuste lineal
 
+parametros=pd.DataFrame(index=filename, columns=['alpha','beta','p'])
 
+h=0
 
+k_max=[8,9,9,9]
 
+for g in grafos:
+    
+    grados=sorted(g.degree, key=lambda x: x[1], reverse=False)
+    
+    dict_g=dict(grados)
+    
+    grados_val=[jj for ii,jj in grados if jj<=k_max[h]]
+    
+    frame=pd.DataFrame(index=np.arange(0,1),columns=sorted(set(grados_val),reverse=False))
+    
+    for i in frame.columns:
+        
+        nodes=[k for k,v in dict_g.items() if v == i]
+        
+        c=0
+        
+        for j in nodes:
+            
+            if j in esenciales:
+                
+                c=c+1
+        
+        frame[i][0]=np.log(1-c/len(nodes))
+    
+    x=np.array(frame.columns)
+    
+    ajuste=model.fit(x.reshape(-1, 1), np.array(frame.loc[0]))
+    
+    r_sq = model.score(x.reshape(-1, 1), np.array(frame.loc[0]))
+    
+    a=ajuste.coef_[0]
+    
+    b=ajuste.intercept_
+    
+    y=a*x+b
+    
+    fig, ax = plt.subplots()
+    
+    plt.scatter(x,frame.loc[0])
+    
+    plt.plot(x,y,'r--',label='Fit: a='+str(a)[0:6]+' b='+str(b)[0:6]+', R^2='+str(r_sq)[0:5])
+    
+    plt.title(names[h],fontsize=20)
+    
+    plt.ylabel('Ln(1-PE)', fontsize=15)
+    
+    plt.xlabel('K',fontsize=15)
+    
+    plt.legend()
+    
+    plt.grid()
 
+    ax.tick_params(axis='both', labelsize=15)
+    
+    plt.savefig(save_path+filename[h]+'He 2b.png',bbox_inches='tight')
+    
+    plt.show()
+    
+    plt.close()
+    
+    rcorr, pvalue = pearsonr(frame.loc[0], y)
+    
+    print(rcorr,pvalue)
+    
+    alpha=1-np.exp(a)
+    
+    beta=1-np.exp(b)
+    
+    print('alpha='+str(alpha)+', beta='+str(beta))
+    
+    parametros['alpha'][filename[h]]=alpha
+    
+    parametros['beta'][filename[h]]=beta
+    
+    parametros['p'][filename[h]]=pvalue
+    
+    h=h+1
+
+parametros.to_csv(save_path+'alpha_beta.csv',encoding='utf-8')
 #%%
+
 '''
 Tabla 5 de Zotenko
 '''
+tabla5=pd.DataFrame(index=filename,columns=['Pares','Pares del mismo tipo','Pares estimados','std'])
 
+std_he=[]
+
+h=0
+
+vecinos=[2,3,3,3]
+
+for g in grafos:
+    
+    print(h)
+    
+    nodes=list(g.nodes())
+    
+    pairs=0
+    
+    total_pairs=0
+    
+    for i in np.arange(0,len(nodes)):
+        
+        for j in np.arange(i+1,len(nodes)):
+            
+            if (nodes[i],nodes[j]) not in g.edges():
+                
+                cn=list(nx.common_neighbors(g, nodes[i], nodes[j]))
+                
+                if len(cn)>=vecinos[h]:
+                    total_pairs=total_pairs+1
+                
+                if len(cn)>=vecinos[h] and nodes[i] in esenciales and nodes[j] in esenciales:
+                    pairs=pairs+1
+                
+                if len(cn)>=vecinos[h] and nodes[i] not in esenciales and nodes[j] not in esenciales:
+                    pairs=pairs+1
+    
+    tabla5['Pares'][filename[h]]=total_pairs
+    
+    tabla5['Pares del mismo tipo'][filename[h]]=pairs
+    
+    print(total_pairs,pairs)
+    
+    #alpha:probabilidad de que una interacción sea esencial y por ende
+    #los nodos involucrados sean esenciales.
+    #beta: probabilidad de que un nodo sea esencial por otra causa
+    
+    x=0
+    
+    he_model=[]
+    
+    while x<100:
+        
+        print(x)
+        
+        total_nodes=[]
+        
+        edges=list(g.edges())
+        
+        en_es=parametros['alpha'][filename[h]]*(len(edges))
+        
+        enlaces_r=random.sample(range(1, len(edges)), int(en_es))
+        
+        enlaces_r_list=[]
+        
+        for n in enlaces_r:
+        
+            aux=edges[n]
+            
+            enlaces_r_list.append(aux)
+            
+            for m in aux:
+            
+                if m not in total_nodes:
+                
+                    total_nodes.append(m)
+        
+        H=g.copy()
+        
+        H.remove_nodes_from(total_nodes)
+        
+        nodesH=list(H.nodes())
+        
+        n_es=parametros['beta'][filename[h]]*(len(nodes))
+        
+        nodos_r=random.sample(range(1, len(nodesH)), int(n_es))
+        
+        nodos_r_list=[]
+        
+        for nn in nodos_r:
+        
+            auxn=nodesH[nn]
+            
+            nodos_r_list.append(auxn)
+            
+            if auxn not in total_nodes:
+            
+                total_nodes.append(auxn)
+            
+            else:
+            
+                print('error')
+        
+        pairs_he=0
+        
+        for ii in np.arange(0,len(nodes)):
+        
+            for jj in np.arange(ii+1,len(nodes)):
+            
+                if (nodes[ii],nodes[jj]) not in g.edges():
+                
+                    cn=list(nx.common_neighbors(g, nodes[ii], nodes[jj]))
+                    
+                    if len(cn)>=vecinos[h] and nodes[ii] in total_nodes and nodes[jj] in total_nodes:
+                    
+                        pairs_he=pairs_he+1
+                    
+                    if len(cn)>=vecinos[h] and nodes[ii] not in total_nodes and nodes[jj] not in total_nodes:
+                    
+                        pairs_he=pairs_he+1
+       
+        he_model.append(pairs_he)
+        
+        x=x+1
+        
+    std_he.append(np.std(he_model)/100)
+    
+    tabla5['Pares estimados'][filename[h]]=round(np.mean(he_model)) 
+    
+    tabla5['std'][filename[h]]=round(np.std(he_model)) 
+    
+    h=h+1
+
+print(tabla5)
+
+tabla5.to_csv(save_path+'tabla_5.csv',encoding='utf-8')
+    
+#%%
 
 
 

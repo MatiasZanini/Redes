@@ -11,7 +11,10 @@ Grupo: Camila Sanz y Matías Zanini.
 ################################################################################
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 import pandas as pd
+import igraph as ig
+import networkx as nx
 
 #%%
 
@@ -23,7 +26,7 @@ Punto 3)
 Item a)
 '''
 
-#%% -------------- Carga de datos
+# -------------- Carga de datos-------------------
 
 path = 'C:/Users/Mati/Documents/GitHub/Redes/TC04_Data/'
 
@@ -39,9 +42,10 @@ genes_df = pd.DataFrame(genes_df.values[1:], columns = protein_names) # Creamos 
 
 genes_df= genes_df.astype(float)  # Convertimos los elementos del dataframe en punto flotante
 
-# NOTA: las filas no se encuentran etiquetadas. Los índices representan el paso temporal de 0 a 11. Las columnas tienen la
-# etiqueta de la proteína en cuestión.
-
+'''
+NOTA: las filas no se encuentran etiquetadas. Los índices representan el paso temporal de 0 a 11. Las columnas tienen
+la etiqueta de la proteína en cuestión.
+'''
 
 #%%
 
@@ -49,8 +53,10 @@ correlacion = genes_df.corr(method='pearson', min_periods=1) # Calcula la correl
 
 correlacion.set_index([correlacion.iloc[0], correlacion.columns[0]]) # Agregamos nombres a las columnas y filas
 
-# NOTA: la matriz de correlación tiene unos en su diagonal. Esto tiene sentido ya que la correlación de Pearson entre dos
-# elementos iguales (elementos en la diagonal, por ejemplo), es 1.
+'''
+NOTA: la matriz de correlación tiene unos en su diagonal. Esto tiene sentido ya que la correlación de Pearson entre dos
+elementos iguales (elementos en la diagonal, por ejemplo), es 1.
+'''
 
 similaridad = (1 + correlacion)/2 # Matriz de similariadad
 
@@ -63,8 +69,6 @@ correlación inversa, indica un grado mínimo de similaridad, reperesentado por 
 '''
 
 #%%
-
-
 '''
 item b)
 '''
@@ -79,18 +83,118 @@ for i in protein_names:
             
             coexp[i][j] = 1
 
+red_coexp = nx.convert_matrix.from_pandas_adjacency(coexp) # Convertimos la matriz de adyacencia en un grafo de networkx
+
+nx.draw_kamada_kawai(red_coexp) # Graficamos la red para visualizarla
+
+coexp_numpy = coexp.values
+
+red_coexp_ig = ig.Graph.TupleList(red_coexp.edges(), directed=False) # Creamos la misma red, pero como objeto de Igraph
+
+# layout = red_coexp_ig.layout_kamada_kawai()
+# layout = red_coexp_ig.layout("kamada_kawai")
+# ig.plot(red_coexp_ig, layout= layout)
+
+
+#%%
 
 '''
-Queda: 
+Item c)
+'''
+# -----------Funciones utiles---------------------
+
+
+def ig_part2dict(Red_igraph, particion_igraph):
     
-    1. crear la particion por fastgreedy (facil con igraph en el colab) 
+    '''
+    Convierte una partición en comunidades a un diccionario
+    '''
     
-    2. idem por infomap
+    particion_dict = {}
     
-    3. calcular la modularidad de cada particion  (sacar del colab)
+    for cluster in range(len(particion_igraph)):
     
-    4. graficar las redes con las comunidades coloereadas (sacar del colab)
+        for nodo in Red_igraph.vs(particion_igraph[cluster])['name']:
+        
+            particion_dict.update({nodo:cluster})
+  
+    return particion_dict
+
+
+
+def graficar_particion(Red, particion_diccionario, posiciones, tamano_nodo = 200, colormap = 'viridis'):
     
+    '''
+    Grafica una red de networkx con colores segun su partició dada por un diccionario según un dado set de posiciones 
+    para los nodos.
+    '''
+    
+    cmap = cm.get_cmap(colormap, max(particion_diccionario.values())+1) # viridis es el mapa de colores
+    
+    # grafico los nodos
+    nx.draw_networkx_nodes(Red, posiciones, particion_diccionario.keys(), node_size = tamano_nodo,
+                           cmap=cmap, node_color = list(particion_diccionario.values()), with_labels = False)
+    
+    # grafico los enlaces aparte
+    nx.draw_networkx_edges(Red, pos = posiciones, alpha=0.5)
+
+
+#%%
+
+# Infomap:
+
+infomap_ig = red_coexp_ig.community_infomap() # Creamos la partición mediante el algoritmo de Infomap
+
+infomap_dict = ig_part2dict(red_coexp_ig, infomap_ig) # Convertimos la partición por Infomap a un diccionario
+
+
+# Fast Greedy:
+
+fg_dendograma = red_coexp_ig.community_fastgreedy(weights=None) # Dendograma con el FastGreedy que maximiza Q
+
+fg_ig = fg_dendograma.as_clustering() # Comunidades dadas por Fast Greedy como objeto de Igraph
+
+fg_dict = ig_part2dict(red_coexp_ig, fg_ig)
+
+
+'''
+Estimación de las modularidades:
+'''
+
+Q_infomap = red_coexp_ig.modularity(infomap_ig)
+
+Q_fg = red_coexp_ig.modularity(fg_ig)
+
+print('La modularidad por infomap es:', Q_infomap)
+
+print('La modularidad por Fast Greedy es:', Q_fg)
+
+#%%
+
+#---------------- Graficamos las particiones --------------------
+
+posiciones = nx.kamada_kawai_layout(red_coexp)
+
+colormap = 'Accent'
+
+tamano_nodo = 35
+
+plt.figure(figsize=(15,15))
+
+plt.subplot(1,2,1)
+
+plt.title('Coexpresión Génica por Infomap')
+
+graficar_particion(red_coexp, infomap_dict, posiciones, tamano_nodo, colormap)
+
+plt.subplot(1,2,2)
+
+plt.title('Coexpresión Génica por Fast Greedy')
+
+graficar_particion(red_coexp, fg_dict, posiciones, tamano_nodo, colormap)
+
+'''
+   
     5. preguntar que es granularidad y tipo para una comunidad
     
 '''
@@ -101,30 +205,3 @@ Calcule la partición en clusters de dicha red mediante los métodos infomap y f
 la modularidad de ambas particiones. Visualice ambas redes y compare el tipo y granularidad de
 las particiones obtenidas.
 '''
-
-
-
-
-# dendograma_fast_greedy = Red_delfines_igraph.community_fastgreedy(weights=None)
-# print(dendograma_fast_greedy)
-# print('La partición de Modularidad optima tiene '+str(dendograma_fast_greedy.optimal_count)+' comunidades')
-# print('Así vemos las comunidades:')
-# print(dendograma_fast_greedy.as_clustering())
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

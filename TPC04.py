@@ -194,14 +194,45 @@ plt.title('Coexpresión Génica por Fast Greedy')
 graficar_particion(red_coexp, fg_dict, posiciones, tamano_nodo, colormap)
 
 '''
-   
-    5. preguntar que es granularidad y tipo para una comunidad
-    
+Viendo los grafos graficados, puede observarse que el mecanismo de Fast Greedy pareciera tener una menor granularidad
+en la distribución de sus comunidades. Esto quiere der, que se observa una menor cantidad de particiones y de mayor
+tamaño. Para visualizar mejor esto, realizaremos un histograma mostrando la cantidad de proteinas incluida en cada
+partición para cada uno de los dos métodos.
 '''
 
+#%%
+
+conteo_fg = list(fg_dict.values())
+
+cant_comunidades_fg = len(fg_ig)
+
+bins_fg = np.linspace(0, cant_comunidades_fg-1, cant_comunidades_fg)
+
+conteo_infomap = list(infomap_dict.values())
+
+cant_comunidades_infomap = len(infomap_ig)
+
+bins_infomap = np.linspace(0, cant_comunidades_infomap-1, cant_comunidades_infomap)
+
+plt.figure()
+
+plt.hist(conteo_fg, bins= bins_fg, density=False, facecolor='blue', alpha=0.9, ec='black', label = 'Fast Greedy')
+
+plt.hist(conteo_infomap, bins= bins_infomap, density=False, facecolor='red', alpha=0.4, ec='black', label = 'Infomap')
+
+plt.xlabel('Comunidades')
+
+plt.ylabel('Cantidad de nodos')
+
+plt.legend()
+
+plt.grid()
+
+print('La partición por Fast Greedy contiene', cant_comunidades_fg, 'comunidades.')
+
+print('La partición por Infomap contiene', cant_comunidades_infomap, 'comunidades.')
 
 '''            
-Calcule la partición en clusters de dicha red mediante los métodos infomap y fastgreedy. Estime
-la modularidad de ambas particiones. Visualice ambas redes y compare el tipo y granularidad de
-las particiones obtenidas.
+Efectivamente, tal como se observa en el histograma, la partición realizada por Fast Greedy, posee una granularidad 
+menor. Esto se traduce en una menor cantidad total de comunidades, y una mayor población en las mismas.
 '''

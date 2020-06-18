@@ -28,6 +28,8 @@ def nombre_post(file, h_post, n_post):
     n_i = n + nlen + 1 # Inicio del nombre
     
     n_f = file.find('"', n_i) # Fin del nombre
+    
+    print(file[n_i : n_f])
 
     return file[n_i : n_f]
 
@@ -104,7 +106,7 @@ def nombre_reacts(file, h_reacts, n_reacts):
 
 path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
 
-filename = 'fuente_completa_likes_2.html'
+filename = 'fuente_completa_likes_20.html'
 
 date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con la fecha y hora de la obtención de los datos. 
 #Atributos: .year, .month, .day, .minute, .second

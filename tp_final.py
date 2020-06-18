@@ -28,6 +28,8 @@ def nombre_post(file, h_post, n_post):
     n_i = n + nlen + 1 # Inicio del nombre
     
     n_f = file.find('"', n_i) # Fin del nombre
+    
+    print(file[n_i : n_f])
 
     return file[n_i : n_f]
 

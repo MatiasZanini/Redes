@@ -102,9 +102,9 @@ def nombre_reacts(file, h_reacts, n_reacts):
 
 #%%
 
-path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
+path = 'D:/Redes 2020/Redes/datos/'
 
-filename = 'fuente_completa_likes_2.html'
+filename = 'post_prueba.html'
 
 date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con la fecha y hora de la obtención de los datos. 
 #Atributos: .year, .month, .day, .minute, .second
@@ -113,7 +113,9 @@ date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con
 Tags:
 '''
 
-h_post = '<div class="sjgh65i0 l9j0dhe7 k4urcfbm du4w35lb">' # Head para encontrar al posteador
+#h_post = '<div class="sjgh65i0 l9j0dhe7 k4urcfbm du4w35lb">' # Head para encontrar al posteador
+
+h_post='<div class="q676j6op qypqp5cg">'
 
 n_post = '<a aria-label=' # Head para el nombre del posteador
 
@@ -135,6 +137,9 @@ reacters = nombre_reacts(file, h_reacts, n_reacts)
 
 fecha = fecha_post(file, date_file, h_date, n_date)
 
+#[humor negro, humor verde, político, actualidad, humor de serie, humor interno]
+#guardamos los archivos como like_comunidad_# de post
+#la comunidad los identificamos como [1,2,3,4,5,6] (ej: 1=humor negro, 2=humor verde, etc)
 
 
 

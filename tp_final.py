@@ -91,22 +91,29 @@ def nombre_reacts(file, h_reacts, n_reacts):
 
             reacters.append(nombre)
             
-            print(nombre)
+            #print(nombre)
             
         n = file.find(n_reacts, n_f + 1)
 
     return reacters
 
 
+def url_link(file):
+    
+    inicio=file.find('https')
+    
+    fin=file.find(' -->\n',inicio)
+    
+    link=file[inicio:fin]
 
-
+    return link
 
 
 #%%
 
 path = 'D:/Redes 2020/Redes/datos/'
 
-filename = 'post_prueba.html'
+filename = 'post_prueba2.html'
 
 date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con la fecha y hora de la obtención de los datos. 
 #Atributos: .year, .month, .day, .minute, .second
@@ -138,6 +145,8 @@ poster = nombre_post(file, h_post, n_post)
 reacters = nombre_reacts(file, h_reacts, n_reacts)
 
 fecha = fecha_post(file, date_file, h_date, n_date)
+
+link=url_link(file)
 
 #[humor negro, humor verde, político, actualidad, humor de serie, humor interno]
 #guardamos los archivos como like_comunidad_# de post

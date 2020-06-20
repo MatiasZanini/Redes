@@ -111,9 +111,9 @@ def url_link(file):
 
 #%%
 
-path = 'D:/Redes 2020/Redes/datos/'
+path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
 
-filename = 'post_prueba2.html'
+filename = 'categoria7_1.html'
 
 date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con la fecha y hora de la obtención de los datos. 
 #Atributos: .year, .month, .day, .minute, .second
@@ -148,9 +148,9 @@ fecha = fecha_post(file, date_file, h_date, n_date)
 
 link=url_link(file)
 
-#[humor negro, humor verde, político, actualidad, humor de serie, humor interno]
+#[humor negro, humor verde, político, actualidad, humor de serie, humor interno, identificacion]
 #guardamos los archivos como like_comunidad_# de post
-#la comunidad los identificamos como [1,2,3,4,5,6] (ej: 1=humor negro, 2=humor verde, etc)
+#la comunidad los identificamos como [1,2,3,4,5,6,7] (ej: 1=humor negro, 2=humor verde, etc)
 
 
 

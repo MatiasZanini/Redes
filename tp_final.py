@@ -111,12 +111,47 @@ def url_link(file):
     return link
 
 
+#%% -------------------------Testeo un solo post--------------------------------------
+
+path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
+
+filename = 'categoria5_1.html'
+
+h_post='<div class="q676j6op qypqp5cg">'
+
+n_post = '<a aria-label=' # Head para el nombre del posteador
+
+#h_reacts = '<div class="a8s20v7p k5wvi7nf buofh1pr pfnyh3mw l9j0dhe7 du4w35lb"><div data' 
+
+h_reacts='<div class="j83agx80 cbu4d94t buofh1pr"><div data'
+
+n_reacts = 'aria-label=' # Head para cada nombre de los que reaccionan. Ignorar "Agregar", "Seguir", "Mensaje"
+# Cortar en "Nuevo mensaje" 
+
+
+file = str(bs(open(path+filename, encoding="utf8"), 'html.parser'))
+    
+poster = nombre_post(file, h_post, n_post)
+
+reacters = nombre_reacts(file, h_reacts, n_reacts)
+
+url_link(file)
+
+
+#%% -----------Lista de headers----------------------
+
+headers_reacters_list = ['<div class="a8s20v7p k5wvi7nf buofh1pr pfnyh3mw l9j0dhe7 du4w35lb"><div data', 
+                    '<div class="j83agx80 cbu4d94t buofh1pr"><div data']
+
+
 #%%
 
 
 path = 'D:/Redes 2020/Redes/datos/segunda tanda/'
 
 archivos=[]
+
+header_react_index = 1 # Indicar el indice del header de la lista de headers.
 
 for file in os.listdir(path):
     
@@ -151,7 +186,7 @@ for filename in archivos:
 
     #h_reacts = '<div class="a8s20v7p k5wvi7nf buofh1pr pfnyh3mw l9j0dhe7 du4w35lb"><div data' # Head para encontrar los que reaccionan
     
-    h_reacts='<div class="j83agx80 cbu4d94t buofh1pr"><div data'
+    h_reacts= headers_reacters_list[header_react_index]
     
     n_reacts = 'aria-label=' # Head para cada nombre de los que reaccionan. Ignorar "Agregar", "Seguir", "Mensaje"
     # Cortar en "Nuevo mensaje" 
@@ -171,6 +206,8 @@ for filename in archivos:
     link=url_link(file)
     
     guardar['categoria'][ind]=filename.split('_')[1]
+    
+    #guardar['categoria'][ind]=filename.split('categoria')[1].split('_')[0]      #Mati
     
     guardar['url'][ind]=link
     

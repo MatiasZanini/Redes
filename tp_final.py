@@ -4,12 +4,14 @@ Created on Wed May 27 00:36:30 2020
 
 @author: Mati
 """
+
 import os
 from datetime import datetime
 #import requests
 from bs4 import BeautifulSoup as bs
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 #%%
 
@@ -74,7 +76,7 @@ def nombre_reacts(file, h_reacts, n_reacts):
     h = file.find(h_reacts)
     
     h_stop = file.find('Nuevo mensaje', h)
-    
+        
     stop = h_stop - nlen -1
     
     n = file.find(n_reacts, h)
@@ -111,50 +113,75 @@ def url_link(file):
 
 #%%
 
-path = 'D:/Redes 2020/Redes/datos/'
+path = 'D:/Redes 2020/Redes/datos/segunda tanda/'
 
-filename = 'post_prueba2.html'
+archivos=[]
 
-date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con la fecha y hora de la obtención de los datos. 
-#Atributos: .year, .month, .day, .minute, .second
-
-'''
-Tags:
-'''
-
-#h_post = '<div class="sjgh65i0 l9j0dhe7 k4urcfbm du4w35lb">' # Head para encontrar al posteador
-
-h_post='<div class="q676j6op qypqp5cg">'
-
-n_post = '<a aria-label=' # Head para el nombre del posteador
-
-h_date = '<div class="qzhwtbm6 knvmm38d">' # Head para encontrar la fecha del post
-
-n_date = '<span id="jsc_c' # Head para el valor de la fecha
-
-h_reacts = '<div class="a8s20v7p k5wvi7nf buofh1pr pfnyh3mw l9j0dhe7 du4w35lb"><div data' # Head para encontrar los que reaccionan
-
-n_reacts = 'aria-label=' # Head para cada nombre de los que reaccionan. Ignorar "Agregar", "Seguir", "Mensaje"
-# Cortar en "Nuevo mensaje" 
-
-
-file = str(bs(open(path+filename, encoding="utf8"), 'html.parser'))
+for file in os.listdir(path):
     
-poster = nombre_post(file, h_post, n_post)
+    if file.endswith('.html'):
+        
+        archivos.append(file)
 
-reacters = nombre_reacts(file, h_reacts, n_reacts)
+guardar=pd.DataFrame(index=np.arange(len(archivos)),columns=['categoria','url','poster','reacters'])
 
-fecha = fecha_post(file, date_file, h_date, n_date)
+ind=0
 
-link=url_link(file)
+for filename in archivos:
 
-#[humor negro, humor verde, político, actualidad, humor de serie, humor interno]
-#guardamos los archivos como like_comunidad_# de post
-#la comunidad los identificamos como [1,2,3,4,5,6] (ej: 1=humor negro, 2=humor verde, etc)
+    print(ind)
+    
+    date_file = datetime.fromtimestamp(os.path.getctime(path+filename)) # Objeto con la fecha y hora de la obtención de los datos. 
+    #Atributos: .year, .month, .day, .minute, .second
+
+    '''
+    Tags:
+    '''
+
+    #h_post = '<div class="sjgh65i0 l9j0dhe7 k4urcfbm du4w35lb">' # Head para encontrar al posteador
+
+    h_post='<div class="q676j6op qypqp5cg">'
+
+    n_post = '<a aria-label=' # Head para el nombre del posteador
+
+    h_date = '<div class="qzhwtbm6 knvmm38d">' # Head para encontrar la fecha del post
+
+    n_date = '<span id="jsc_c' # Head para el valor de la fecha
+
+    #h_reacts = '<div class="a8s20v7p k5wvi7nf buofh1pr pfnyh3mw l9j0dhe7 du4w35lb"><div data' # Head para encontrar los que reaccionan
+    
+    h_reacts='<div class="j83agx80 cbu4d94t buofh1pr"><div data'
+    
+    n_reacts = 'aria-label=' # Head para cada nombre de los que reaccionan. Ignorar "Agregar", "Seguir", "Mensaje"
+    # Cortar en "Nuevo mensaje" 
 
 
+    file = str(bs(open(path+filename, encoding="utf8"), 'html.parser'))
+    
+    poster = nombre_post(file, h_post, n_post)
+
+    reacters = nombre_reacts(file, h_reacts, n_reacts)
+
+    fecha = fecha_post(file, date_file, h_date, n_date)
+
+    link=url_link(file)
+    
+    guardar['categoria'][ind]=filename.split('_')[1]
+    
+    guardar['url'][ind]=link
+    
+    guardar['poster'][ind]=poster
+    
+    guardar['reacters'][ind]=reacters
+    
+    ind=ind+1
+
+    #[humor negro, humor verde, político, actualidad, humor de serie, humor interno]
+    #guardamos los archivos como like_comunidad_# de post
+    #la comunidad los identificamos como [1,2,3,4,5,6] (ej: 1=humor negro, 2=humor verde, etc)
 
 
+guardar.to_pickle(path+'frame_prueba2.p')
 
 
 

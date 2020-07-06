@@ -113,6 +113,7 @@ def url_link(file):
 
 #%%
 
+
 path = 'D:/Redes 2020/Redes/datos/segunda tanda/'
 
 archivos=[]
@@ -162,7 +163,10 @@ for filename in archivos:
 
     reacters = nombre_reacts(file, h_reacts, n_reacts)
 
-    fecha = fecha_post(file, date_file, h_date, n_date)
+
+#[humor negro, humor verde, político, actualidad, humor de serie, humor interno, identificacion]
+#guardamos los archivos como like_comunidad_# de post
+#la comunidad los identificamos como [1,2,3,4,5,6,7] (ej: 1=humor negro, 2=humor verde, etc)
 
     link=url_link(file)
     

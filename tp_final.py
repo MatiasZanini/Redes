@@ -151,7 +151,7 @@ path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
 
 save_path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/'
 
-save_name = 'primera_tanda.p'
+save_name = 'segunda_tanda.p'
 
 archivos=[]
 
@@ -214,7 +214,9 @@ for filename in archivos:
     
     #guardar['categoria'][ind]=filename.split('_')[1]
     
-    guardar['categoria'][ind]=filename.split('categoria')[1].split('_')[0]      #Mati
+    #guardar['categoria'][ind]=filename.split('categoria')[1].split('_')[0]      #Mati
+    
+    guardar['categoria'][ind]=filename.split('_')[1] # Mati 2
     
     guardar['url'][ind]=link
     
@@ -233,7 +235,7 @@ guardar.to_pickle(save_path+save_name)
 
 
 
-
+# Para cargar el pickle: pd.read_pickle(file)
 
 
 

@@ -115,7 +115,7 @@ def url_link(file):
 
 path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
 
-filename = 'categoria5_1.html'
+filename = 'categoria7_1.html'
 
 h_post='<div class="q676j6op qypqp5cg">'
 
@@ -147,7 +147,11 @@ headers_reacters_list = ['<div class="a8s20v7p k5wvi7nf buofh1pr pfnyh3mw l9j0dh
 #%%
 
 
-path = 'D:/Redes 2020/Redes/datos/segunda tanda/'
+path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
+
+save_path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/'
+
+save_name = 'primera_tanda.p'
 
 archivos=[]
 
@@ -198,6 +202,9 @@ for filename in archivos:
 
     reacters = nombre_reacts(file, h_reacts, n_reacts)
 
+    if len(reacters)==0:
+        
+        raise ValueError('El siguiente post tiene mal su header:', filename)
 
 #[humor negro, humor verde, político, actualidad, humor de serie, humor interno, identificacion]
 #guardamos los archivos como like_comunidad_# de post
@@ -205,9 +212,9 @@ for filename in archivos:
 
     link=url_link(file)
     
-    guardar['categoria'][ind]=filename.split('_')[1]
+    #guardar['categoria'][ind]=filename.split('_')[1]
     
-    #guardar['categoria'][ind]=filename.split('categoria')[1].split('_')[0]      #Mati
+    guardar['categoria'][ind]=filename.split('categoria')[1].split('_')[0]      #Mati
     
     guardar['url'][ind]=link
     
@@ -222,7 +229,7 @@ for filename in archivos:
     #la comunidad los identificamos como [1,2,3,4,5,6] (ej: 1=humor negro, 2=humor verde, etc)
 
 
-guardar.to_pickle(path+'frame_prueba2.p')
+guardar.to_pickle(save_path+save_name)
 
 
 

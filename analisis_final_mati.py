@@ -50,7 +50,7 @@ data_total.to_pickle(save_path + 'data_total.p')
 
 save_path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/'
 
-save_path_red = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/redes_gml/'
+save_path_red = 'C:/Users/Mati/Documents/GitHub/Redes/datos/redes_gml/'
 
 save_name = 'data_total.p'
 
@@ -104,6 +104,23 @@ for i in range(len(data)):
 nx.write_gml(red_completa, save_path_red+'red_completa.gml')
 
 
+#%% 
+
+############
+#ANALISIS
+############
+
+
+
+# Mirar pagina: https://networkx.github.io/documentation/stable/reference/algorithms/bipartite.html en la parte
+# weightened projections y mirar la que habla del ratio de vecinos compartidos. Ver si eso sirve para establecer una
+#tolerancia.
+
+
+
+
+
+
 
 
 '''
@@ -118,6 +135,8 @@ hacer dendograma por modularidad
 o hacer un promedio d
 
 hacer proyeccion incluyendo posters y ver si hay enfermitos que atraen muchos likes (enfermitos "famosos")
+
+
 
 '''
 

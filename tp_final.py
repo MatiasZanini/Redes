@@ -151,7 +151,7 @@ path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/'
 
 save_path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/'
 
-save_name = 'segunda_tanda.p'
+save_name = 'data_cami_depurada.p'
 
 archivos=[]
 
@@ -238,7 +238,7 @@ guardar.to_pickle(save_path+save_name)
 # Para cargar el pickle: pd.read_pickle(file)
 
 
-
+# Categorías definitivas: [humor negro, humor verde, humor de serie, humor interno, humor de identificacion] (del 1 al 5)
 
 
 

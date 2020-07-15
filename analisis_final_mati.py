@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import networkx as nx
 from networkx.algorithms import bipartite
+import igraph as ig
+import matplotlib.cm as cm
 
 #%%-------Unificar dataframes---------------
 
@@ -110,11 +112,15 @@ nx.write_gml(red_completa, save_path_red+'red_completa.gml')
 #ANALISIS
 ############
 
+# Carga de datos
+
 save_path_red = 'C:/Users/Mati/Documents/GitHub/Redes/datos/redes_gml/'
 
 red_name = 'red_completa.gml'
 
 red_completa = nx.read_gml(save_path_red + red_name)
+
+#%%-----------Funciones---------------
 
 
 def nodo_conectado(red, nodo1, nodo2):
@@ -138,18 +144,24 @@ def proyect_sin_posters(red):
             
             proyectada.add_edge(reacter, post)
     
-    # si 2 enfermitos le dieron like a n o mas posts iguales --> enlace
+    
     
     return proyectada
     
 
 def proyect_enfermitos(red, tol):
     
+    '''
+    si 2 enfermitos le dieron like a "tol" o mas posts iguales --> enlace
+    '''
+    
     enfermitos, posts = nx.bipartite.sets(red)
     
     red_enfermita = bipartite.weighted_projected_graph(red, enfermitos)
     
-    for enlace in red_enfermita.edges():
+    enlaces = red_enfermita.edges()
+    
+    for enlace in enlaces:
         
         nodo1, nodo2 = enlace
         
@@ -158,13 +170,71 @@ def proyect_enfermitos(red, tol):
             red_enfermita.remove_edge(nodo1, nodo2)
             
     return red_enfermita
+
+def graficar_particion(Red, particion_diccionario, posiciones, tamano_nodo = 200, colormap = 'viridis'):
+    
+    '''
+    Grafica una red de networkx con colores segun su partició dada por un diccionario según un dado set de posiciones 
+    para los nodos.
+    '''
+    
+    cmap = cm.get_cmap(colormap, max(particion_diccionario.values())+1) # viridis es el mapa de colores
+    
+    # grafico los nodos
+    nx.draw_networkx_nodes(Red, posiciones, particion_diccionario.keys(), node_size = tamano_nodo,
+                           cmap=cmap, node_color = list(particion_diccionario.values()), with_labels = False)
+    
+    # grafico los enlaces aparte
+    nx.draw_networkx_edges(Red, pos = posiciones, alpha=0.5)
             
-            
-#NOTA: esta dando una cantidad enorme de enlaces. Revisar
+#%%
     
-    
-    
-    
+tolerancia = 15
+
+solo_reacters = proyect_sin_posters(red_completa)
+
+proyectada = proyect_enfermitos(solo_reacters, tolerancia)
+
+nx.write_gml(proyectada, save_path_red+'tolerancia_{}.gml'.format(tolerancia)) # Red proyectada completa       
+
+
+# Calculamos la componente gigante:
+gc = proyectada.copy() 
+
+gc_nodes = max(nx.connected_components(proyectada), key = len)
+
+nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
+
+gc.remove_nodes_from(nodos_no_gc)
+
+nx.write_gml(gc, save_path_red+'cg_{}.gml'.format(tolerancia))
+
+#%%
+
+tolerancia = 10
+
+red_enf = nx.read_gml('save_path_red'+'cg_{}.gml')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 '''
 vamos a proyectar primero a una red de reaccionadores, luego sobre esa red hacemos la proyeccion pesada y usamos el 
@@ -173,14 +243,6 @@ peso de cada enlace (cantidad de vecinos compartidos) como parametro a colocarle
 Despues podemos usar la proyeccion de la red dirigida sobre los enfermitos para encontrar (nuevamente mediante el peso)
 la cantidad de enfermitos que likearon varios posts de un posteador.
 '''
-
-
-
-
-
-
-
-
 
 '''
 NOTAS:

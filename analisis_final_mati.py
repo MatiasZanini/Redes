@@ -14,6 +14,7 @@ import networkx as nx
 from networkx.algorithms import bipartite
 import igraph as ig
 import matplotlib.cm as cm
+import community as community_louvain
 
 #%%-------Unificar dataframes---------------
 
@@ -186,6 +187,24 @@ def graficar_particion(Red, particion_diccionario, posiciones, tamano_nodo = 200
     
     # grafico los enlaces aparte
     nx.draw_networkx_edges(Red, pos = posiciones, alpha=0.5)
+    
+    
+
+def ig_part2dict(Red_igraph, particion_igraph):
+    
+    '''
+    Convierte una partición en comunidades a un diccionario
+    '''
+    
+    particion_dict = {}
+    
+    for cluster in range(len(particion_igraph)):
+    
+        for nodo in Red_igraph.vs(particion_igraph[cluster])['name']:
+        
+            particion_dict.update({nodo:cluster})
+  
+    return particion_dict
             
 #%%
     
@@ -213,13 +232,73 @@ nx.write_gml(gc, save_path_red+'cg_{}.gml'.format(tolerancia))
 
 tolerancia = 10
 
-red_enf = nx.read_gml('save_path_red'+'cg_{}.gml')
+red_enf = nx.read_gml(save_path_red+'cg_{}.gml'.format(tolerancia))
+
+red_enf_ig = ig.Graph.TupleList(red_enf.edges(), directed=False)
 
 
+#%%
+
+# Infomap:
+
+infomap_ig = red_enf_ig.community_infomap() # Creamos la partición mediante el algoritmo de Infomap
+
+infomap_dict = ig_part2dict(red_enf_ig, infomap_ig) # Convertimos la partición por Infomap a un diccionario
 
 
+# Fast Greedy:
+
+fg_dendograma = red_enf_ig.community_fastgreedy(weights=None) # Dendograma con el FastGreedy que maximiza Q
+
+fg_ig = fg_dendograma.as_clustering() # Comunidades dadas por Fast Greedy como objeto de Igraph
+
+fg_dict = ig_part2dict(red_enf_ig, fg_ig)
+
+lou_dict = community_louvain.best_partition(red_enf)
 
 
+'''
+Estimación de las modularidades:
+'''
+
+Q_infomap = red_enf_ig.modularity(infomap_ig)
+
+Q_fg = red_enf_ig.modularity(fg_ig)
+
+print('La modularidad por infomap es:', Q_infomap)
+
+print('La modularidad por Fast Greedy es:', Q_fg)
+
+
+#%%
+
+#---------------- Graficamos las particiones --------------------
+
+posiciones = nx.kamada_kawai_layout(red_enf)
+
+colormap = 'Accent'
+
+tamano_nodo = 35
+
+plt.figure(figsize=(15,15))
+
+plt.subplot(1,3,1)
+
+plt.title('Comunidades por Infomap')
+
+graficar_particion(red_enf, infomap_dict, posiciones, tamano_nodo, colormap)
+
+plt.subplot(1,3,2)
+
+plt.title('Comunidades por Fast Greedy')
+
+graficar_particion(red_enf, fg_dict, posiciones, tamano_nodo, colormap)
+
+plt.subplot(1,3,3)
+
+plt.title('Comunidades por Louvain')
+
+graficar_particion(red_enf, lou_dict, posiciones, tamano_nodo, colormap)
 
 
 

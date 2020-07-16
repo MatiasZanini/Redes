@@ -4,6 +4,8 @@ Created on Thu Jul  9 16:54:37 2020
 
 @author: Mati
 """
+# CARGA DE PAQUETES
+
 
 import os
 from datetime import datetime
@@ -15,8 +17,15 @@ from networkx.algorithms import bipartite
 import igraph as ig
 import matplotlib.cm as cm
 import community as community_louvain
+import pickle
 
-#%%-------Unificar dataframes---------------
+#%%
+
+
+#####################################################################################
+#                               UNIFICACION DE DATAFRAMES
+#####################################################################################
+
 
 # Categorías: [humor negro, humor verde, humor de serie, humor interno, humor de identificacion] (del 1 al 5)
 
@@ -48,15 +57,70 @@ data_total.to_pickle(save_path + 'data_total.p')
 
 #data_ordenada = data_total.sort_values('categoria')
 
+#%%
+
+####################################################################################
+#                               SIN CATEGORIA 5
+####################################################################################
+
+# Categorías: [humor negro, humor verde, humor de serie, humor interno] (del 1 al 4)
+
+
+save_path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/'
+
+df_total_name = 'data_total.p'
+
+df_parcial_name = 'data_sin_cat_5.p'
+
+data_parcial = pd.read_pickle(save_path + df_total_name)
+
+df1 = pd.read_pickle(save_path + 'primera_tanda.p')
+
+df2 = pd.read_pickle(save_path + 'segunda_tanda.p')
+
+df3 = pd.read_pickle(save_path + 'datos_red.p')
+
+borrables = [3,8,9,20,47,46, 48, 49, 50, 52, 54,56,53]
+
+df3.drop(borrables, inplace = True) # Eliminamos posts mal categorizados.
+
+df1.replace({'5' : '3', '6': '4', '7':'5'}, inplace=True)
+
+for i in range(len(df1)):
+    
+    if df1['categoria'][i] == '5':
+        
+        df1.drop(index=i, inplace = True)
+
+df2.replace({'5' : '3', '6': '4', '7':'5'}, inplace=True)
+
+data_parcial = df1
+
+data_parcial = data_parcial.append(df2, ignore_index=True)
+
+data_parcial = data_parcial.append(df3, ignore_index=True)
+
+data_parcial.drop_duplicates(subset ='url', keep = 'first', inplace = True)
+
+data_parcial.to_pickle(save_path + df_parcial_name)
+
 
 #%%
+#####################################################################################
+#                               CARGA DE ENFERMITOS Y POSTS
+#####################################################################################
 
 save_path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/'
 
 save_path_red = 'C:/Users/Mati/Documents/GitHub/Redes/datos/redes_gml/'
 
-save_name = 'data_total.p'
+#save_name = 'data_total.p'
 
+save_name = 'data_sin_cat_5.p'
+
+#name_red = 'red_completa.gml'
+
+name_red = 'red_sin_cat_5.gml'
 
 data = pd.read_pickle(save_path+save_name)
 
@@ -83,6 +147,8 @@ for i in range(len(data)):
         enfermitos.append(poster)
 
 
+#%% ------------------------------- GENERAMOS LA RED Y LA GUARDAMOS -------------------------------
+
 red_completa = nx.DiGraph()
 
 red_completa.add_nodes_from(enfermitos, bipartite = 0)
@@ -104,24 +170,48 @@ for i in range(len(data)):
         red_completa.add_edge(post, j)
 
 
-nx.write_gml(red_completa, save_path_red+'red_completa.gml')
-
+nx.write_gml(red_completa, save_path_red + name_red)
 
 #%% 
 
-############
-#ANALISIS
-############
+#####################################################################################
+#                                CARGA DE RED COMPLETA Y DATAFRAME
+#####################################################################################
 
 # Carga de datos
 
+save_path = 'C:/Users/Mati/Documents/GitHub/Redes/datos/data_frames/'
+
 save_path_red = 'C:/Users/Mati/Documents/GitHub/Redes/datos/redes_gml/'
 
-red_name = 'red_completa.gml'
+#red_name = 'red_completa.gml'
+
+red_name = 'red_sin_cat_5.gml'
+
+#df_name = 'data_total.p'
+
+df_name = 'data_sin_cat_5.p'
 
 red_completa = nx.read_gml(save_path_red + red_name)
 
-#%%-----------Funciones---------------
+df_completo = pd.read_pickle(save_path + df_name)
+
+#%%
+#####################################################################################
+#                                    FUNCIONES
+#####################################################################################
+
+def save_dict(dictionary, path, name):
+    
+    with open(path + name + '.pkl', 'wb') as f:
+        
+        pickle.dump(dictionary, f, pickle.HIGHEST_PROTOCOL)
+
+def load_dict(path, name):
+    
+    with open(path + name + '.pkl', 'rb') as f:
+        
+        return pickle.load(f)
 
 
 def nodo_conectado(red, nodo1, nodo2):
@@ -205,10 +295,175 @@ def ig_part2dict(Red_igraph, particion_igraph):
             particion_dict.update({nodo:cluster})
   
     return particion_dict
-            
-#%%
+
+def prop_enfermitos(enf, df):
     
-tolerancia = 15
+    '''
+    Pide un enfermito y el dataframe con los datos de posts, posteadores y reacters. 
+    Devuelve una lista con las categorias de los posts que likeo
+    '''
+    
+    prop = []
+    
+    for i in range(len(df)):
+        
+        if enf in df['reacters'][i]:
+            
+            prop.append(int(df['categoria'][i]))
+    
+    
+    return prop
+
+
+def tag_enfermitos(enf, df, categorias):
+    
+    '''
+    Pide un enfermito, el dataframe con los datos de los posts y una lista con las categorias.
+    Devuelve un int con la categoria preferida del enfermito o un array con las categorias preferidas si era mas de una.
+    '''
+    
+    
+    counts, bins = np.histogram(np.asarray(prop_enfermitos(enf, df)), bins = categorias+[len(categorias)+1])
+    
+    index_maximos = [i for i, x in enumerate(counts) if x == max(counts)]
+    
+    if len(index_maximos)==1:
+        
+        tag = bins[index_maximos[0]]
+        
+    else:
+        
+        tag = bins[index_maximos] # Si tiene mas de una categoria preferida, se guarda un array con dichas categorias.
+
+    return tag
+
+
+
+
+def armar_listas_por_comunidades(particion_diccionario):
+  
+    listas_nodos_particiones = []
+  
+    comunidades = 0
+  
+    lista_comunidad = []
+  
+    for nodo in particion_diccionario.keys():
+    
+        if particion_diccionario[nodo] == comunidades:
+      
+            lista_comunidad.append(nodo)
+    
+        else:
+        
+            comunidades+=1
+          
+            listas_nodos_particiones.append(lista_comunidad)
+          
+            lista_comunidad = [nodo]
+  
+    listas_nodos_particiones.append(lista_comunidad)
+  
+    return listas_nodos_particiones
+
+def calcular_modularidad(Red,particion_diccionario):
+  
+    listas_por_comunidades = armar_listas_por_comunidades(particion_diccionario)
+  
+    enlaces = len(Red.edges())
+  
+    enlaces_en_comunidad = []
+  
+    suma_grados_comunidad_2 = []
+  
+    for i in range(len(listas_por_comunidades)):
+    
+        enlaces_en_comunidad.append(len(Red.subgraph(listas_por_comunidades[i]).edges()))
+    
+        suma_grados_comunidad_2.append(sum([grado for nodo, grado in Red.degree(listas_por_comunidades[i])])**2)
+  
+    return sum(enlaces_en_comunidad)/enlaces - (sum(suma_grados_comunidad_2)/(4*enlaces**2))
+
+
+
+          
+#%%
+
+#####################################################################################
+#                                      ANALISIS
+#####################################################################################
+
+
+# ------------------------------- PROPIEDADES DE LOS ENFERMITOS -----------------------------
+
+props = {}
+
+tag = {}
+
+categorias = [1,2,3,4] #(humor negro, verde, serie, interno)
+
+iter_enfermitos = enfermitos # Poner la particion en comunidades como diccionario o lista de enfermitos
+
+for enf in iter_enfermitos:
+    
+    props[enf] = prop_enfermitos(enf, df_completo) # Diccionario con vectores de categorias por enfermito
+
+for enf in props:
+    
+    tag[enf] = tag_enfermitos(enf, df_completo, categorias)
+        
+# tag_df = pd.DataFrame(index = range(len(iter_enfermitos)),columns = ['enfermito', 'categoria pref'])
+
+# for enf in range(len(iter_enfermitos)):
+    
+#     tag_df['categoria pref'][enf] = tag[enfermitos[enf]]
+
+#     tag_df['enfermito'][enf] = enfermitos[enf]
+
+#%% ------------------ GUARDAR LAS PROPIEDADES DE LOS ENFERMITOS ------------------------------
+
+path_props = 'C:/Users/Mati/Documents/GitHub/Redes/datos/props_enfermitos/'
+
+name_tag = 'tags_enfermitos_sin_cat_5'
+
+name_props = 'propiedades_enfermitos_sin_cat_5'
+
+save_dict(props, path_props, name_props)
+
+save_dict(tag, path_props, name_tag)
+
+
+#%% -------------------- CARGAR LAS PROPIEDADES DE LOS ENFERMITOS -----------------------------
+
+path_props = 'C:/Users/Mati/Documents/GitHub/Redes/datos/props_enfermitos/'
+
+name_tag = 'tags_enfermitos_sin_cat_5'
+
+name_props = 'propiedades_enfermitos_sin_cat_5'
+
+props = load_dict(path_props, name_props)
+
+tag = load_dict(path_props, name_tag)
+
+
+
+#%%----------------------------------- PROYECCIONES ----------------------------------
+
+tibios = []
+
+for enf in tag:
+    
+    tipo_array = type(np.array([]))
+    
+    if type(tag[enf]) == tipo_array:
+        
+        tibios.append(enf)
+        
+#%%
+        
+red_completa.remove_nodes_from(tibios)
+    
+tolerancia = 20
 
 solo_reacters = proyect_sin_posters(red_completa)
 
@@ -228,16 +483,23 @@ gc.remove_nodes_from(nodos_no_gc)
 
 nx.write_gml(gc, save_path_red+'cg_{}.gml'.format(tolerancia))
 
-#%%
 
-tolerancia = 10
+
+
+
+#%% ---------------------------- CARGAR COMPONENTE GIGANTE ---------------------------------------------
+
+tolerancia = 5 # Poner la tolerancia utilizada
 
 red_enf = nx.read_gml(save_path_red+'cg_{}.gml'.format(tolerancia))
 
 red_enf_ig = ig.Graph.TupleList(red_enf.edges(), directed=False)
 
 
+
 #%%
+
+#---------------------------------- CALCULO DE COMUNIDADES -------------------------------------------
 
 # Infomap:
 
@@ -265,14 +527,18 @@ Q_infomap = red_enf_ig.modularity(infomap_ig)
 
 Q_fg = red_enf_ig.modularity(fg_ig)
 
+Q_lou = calcular_modularidad(red_enf, lou_dict)
+
 print('La modularidad por infomap es:', Q_infomap)
 
 print('La modularidad por Fast Greedy es:', Q_fg)
 
+print('La modularidad por Louvain es:', Q_lou)
+
 
 #%%
 
-#---------------- Graficamos las particiones --------------------
+#---------------------------------- GRAFICO DE PARTICIONES --------------------
 
 posiciones = nx.kamada_kawai_layout(red_enf)
 
@@ -299,6 +565,16 @@ plt.subplot(1,3,3)
 plt.title('Comunidades por Louvain')
 
 graficar_particion(red_enf, lou_dict, posiciones, tamano_nodo, colormap)
+
+
+
+
+
+
+
+
+
+
 
 
 

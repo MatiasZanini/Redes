@@ -262,17 +262,22 @@ def proyect_enfermitos(red, tol):
             
     return red_enfermita
 
-def graficar_particion(Red, particion_diccionario, posiciones, tamano_nodo = 200, colormap = 'viridis'):
+def graficar_particion(Red, particion_diccionario, posiciones, label=None, tamano_nodo = 200, colormap = 'viridis'):
     
     '''
     Grafica una red de networkx con colores segun su partició dada por un diccionario según un dado set de posiciones 
     para los nodos.
     '''
     
+    if label:
+        
+        labels = nx.get_node_attributes(Red, label)
+    
+    
     cmap = cm.get_cmap(colormap, max(particion_diccionario.values())+1) # viridis es el mapa de colores
     
     # grafico los nodos
-    nx.draw_networkx_nodes(Red, posiciones, particion_diccionario.keys(), node_size = tamano_nodo,
+    nx.draw_networkx_nodes(Red, posiciones, particion_diccionario.keys(), labels = labels, node_size = tamano_nodo,
                            cmap=cmap, node_color = list(particion_diccionario.values()), with_labels = False)
     
     # grafico los enlaces aparte
@@ -459,41 +464,58 @@ for enf in tag:
         
         tibios.append(enf)
         
-#%%
-        
+#%% ---------------------------- GUARDAR RED ANALIZADA ------------------------------
+
+tolerancias = [2,3,4,6,7,8,9,11,12,13,14]
+
 red_completa.remove_nodes_from(tibios)
+
+for tolerancia in tolerancias:
+        
     
-tolerancia = 20
-
-solo_reacters = proyect_sin_posters(red_completa)
-
-proyectada = proyect_enfermitos(solo_reacters, tolerancia)
-
-nx.write_gml(proyectada, save_path_red+'tolerancia_{}.gml'.format(tolerancia)) # Red proyectada completa       
-
-
-# Calculamos la componente gigante:
-gc = proyectada.copy() 
-
-gc_nodes = max(nx.connected_components(proyectada), key = len)
-
-nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
-
-gc.remove_nodes_from(nodos_no_gc)
-
-nx.write_gml(gc, save_path_red+'cg_{}.gml'.format(tolerancia))
-
-
-
-
+    
+    #tolerancia = 12
+    
+    solo_reacters = proyect_sin_posters(red_completa)
+    
+    proyectada = proyect_enfermitos(solo_reacters, tolerancia)
+    
+    nx.write_gml(proyectada, save_path_red+'tolerancia_{}.gml'.format(tolerancia)) # Red proyectada completa       
+    
+    
+    # Calculamos la componente gigante:
+    gc = proyectada.copy() 
+    
+    gc_nodes = max(nx.connected_components(proyectada), key = len)
+    
+    nodos_no_gc = set(gc.nodes()) - set(gc_nodes)
+    
+    gc.remove_nodes_from(nodos_no_gc)
+    
+    nx.write_gml(gc, save_path_red+'cg_{}.gml'.format(tolerancia))
+    
 
 #%% ---------------------------- CARGAR COMPONENTE GIGANTE ---------------------------------------------
 
-tolerancia = 5 # Poner la tolerancia utilizada
+tolerancia = 11 # Poner la tolerancia utilizada
 
 red_enf = nx.read_gml(save_path_red+'cg_{}.gml'.format(tolerancia))
 
+nx.set_node_attributes(red_enf, tag, 'Categoría Preferida')
+
+
 red_enf_ig = ig.Graph.TupleList(red_enf.edges(), directed=False)
+
+
+#%% ---------------------------- AGREGARLE EL TAG A LOS NODOS COMO PROPIEDAD ---------------------------
+
+#red = red_completa
+
+red = red_enf
+
+nx.set_node_attributes(red, tag, 'Categoría Preferida')
+
+
 
 
 
@@ -552,41 +574,100 @@ plt.subplot(1,3,1)
 
 plt.title('Comunidades por Infomap')
 
-graficar_particion(red_enf, infomap_dict, posiciones, tamano_nodo, colormap)
+graficar_particion(red_enf, infomap_dict, posiciones,label='Categoría Preferida', tamano_nodo=tamano_nodo, colormap=colormap)
 
 plt.subplot(1,3,2)
 
 plt.title('Comunidades por Fast Greedy')
 
-graficar_particion(red_enf, fg_dict, posiciones, tamano_nodo, colormap)
+graficar_particion(red_enf, fg_dict, posiciones,label='Categoría Preferida', tamano_nodo=tamano_nodo, colormap=colormap)
 
 plt.subplot(1,3,3)
 
 plt.title('Comunidades por Louvain')
 
-graficar_particion(red_enf, lou_dict, posiciones, tamano_nodo, colormap)
+graficar_particion(red_enf, lou_dict, posiciones, label='Categoría Preferida', tamano_nodo = tamano_nodo, colormap =colormap)
 
 
 
+#%% -------------------------------- CLASIFICANDO COMUNIDADES ---------------------------------------------
+
+comu_dict = lou_dict # Poner el diccionario con las comunidades
+
+comunidades_numero = list(set(comu_dict.values()))
+
+comunidades = []
+
+for comunidad in comunidades_numero:
+    
+    comunidades.append([i for i in lou_dict if lou_dict[i]==comunidad]) # Ponemos las comunidades en cada elemento de la lista
+
+comunidades_dict = []
+
+for comunidad in comunidades_numero:
+    
+    comunidades_dict.append({key : tag[key] for key in comunidades[comunidad]}) # Lista con diccionario de las comus.
+
+#%%
 
 
+comunidad0 = list(comunidades_dict[0].values())
 
+bins = [1,2,3,4,5]
 
+counts0, bins0 = np.histogram(comunidad0, bins=bins)
 
+comunidad1 = list(comunidades_dict[1].values())
 
+bins = [1,2,3,4,5]
 
+counts1, bins1 = np.histogram(comunidad1, bins=bins)
 
+comunidad2 = list(comunidades_dict[2].values())
 
+bins = [1,2,3,4,5]
 
+counts2, bins2 = np.histogram(comunidad2, bins=bins)
 
+comunidad3 = list(comunidades_dict[3].values())
 
+bins = [1,2,3,4,5]
 
+counts3, bins3 = np.histogram(comunidad3, bins=bins)
 
+plt.figure() # Sin normalizar
 
+plt.plot([1,2,3,4], counts0, '.-', label= 'Comunidad 0')
 
+plt.plot([1,2,3,4], counts1, '.-', label= 'Comunidad 1')
 
+plt.plot([1,2,3,4],counts2, '.-', label= 'Comunidad 2')
 
+plt.plot([1,2,3,4],counts3, '.-', label= 'Comunidad 3')
 
+plt.xlabel('Categorias')
+
+plt.ylabel('Cantidad de likes')
+
+plt.legend()
+
+#%%
+
+plt.figure() # Normalizado
+
+plt.plot([1,2,3,4], counts0/max(counts0), '.-', label= 'Comunidad 0')
+
+plt.plot([1,2,3,4], counts1/max(counts1), '.-', label= 'Comunidad 1')
+
+plt.plot([1,2,3,4],counts2/max(counts2), '.-', label= 'Comunidad 2')
+
+plt.plot([1,2,3,4],counts3/max(counts3), '.-', label= 'Comunidad 3')
+
+plt.xlabel('Categorias')
+
+plt.ylabel('Cantidad de enfermitos en la categoría')
+
+plt.legend()
 
 
 

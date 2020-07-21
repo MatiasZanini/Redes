@@ -346,11 +346,15 @@ for i in cat_por_com:
     
     cont += 1
     
-plt.xlabel('Categorias')
+plt.ylabel('Cantidad de likes', fontsize = 20)
 
-plt.ylabel('Cantidad de likes')
+plt.title('Distribución real', fontsize = 20)
 
-plt.legend()
+plt.legend(fontsize=16)
+
+plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'], fontsize=14)
+
+plt.grid()
 
 
 #%% ------------------------------------- COMPARACION CON MODELO NULO -------------------------------------------
@@ -361,36 +365,63 @@ el analisis (modelo nulo). Si los histogramas de cada comunidad dan lo mismo, en
 hay algo.
 '''
 
+distrib = []
+
+for enf in red_enf.nodes():
+
+    distrib.append(cat_norm[enf])
+
+distrib = np.asarray(distrib)
+
+distrib = sum(distrib)/sum(sum(distrib))
+
+cat_norm_nulo = {}
+
+for enf in red_enf.nodes():
+    
+    cat_norm_nulo[enf] = int(func.dado_cargado([1,2,3,4], distrib))
 
 
+#%%
+
+comunidades_dict_norm = []
+
+categorias = [1,2,3,4]
+
+for comunidad in comunidades_numero:
+    
+    comunidades_dict_norm.append({key : cat_norm_nulo[key] for key in comunidades[comunidad]})
 
 
+cat_por_com_nulo = []
 
+for comunidad in comunidades_dict_norm:
+    
+    counts, bins = np.histogram(list(comunidad.values()), bins = categorias+[len(categorias)+1])
 
+    cat_por_com_nulo.append(counts/sum(counts))
 
+#%% Grafico
 
+cont = 0
 
+for i in cat_por_com_nulo:
+    
+    plt.plot([1,2,3,4], i, '.-', label= 'Comunidad {}'.format(cont))
+    
+    cont += 1
+    
+#plt.xlabel('Categorias', fontsize = 20)
 
+plt.ylabel('Cantidad de likes', fontsize = 20)
 
+plt.title('Distribución para modelo Nulo', fontsize = 20)
 
+plt.legend(fontsize=16)
 
+plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'], fontsize=14)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+plt.grid()
 
 
 

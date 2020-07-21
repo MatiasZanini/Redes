@@ -9,6 +9,7 @@ import numpy as np
 import networkx as nx
 from networkx.algorithms import bipartite
 import matplotlib.cm as cm
+from random import choices
 
 #%%
 #####################################################################################
@@ -241,3 +242,26 @@ def calcular_modularidad(Red,particion_diccionario):
         suma_grados_comunidad_2.append(sum([grado for nodo, grado in Red.degree(listas_por_comunidades[i])])**2)
   
     return sum(enlaces_en_comunidad)/enlaces - (sum(suma_grados_comunidad_2)/(4*enlaces**2))
+
+
+def dado_cargado(poblacion, distribucion, cant_muestras = 1):
+    
+    return np.asarray(choices(poblacion, distribucion, k = cant_muestras))
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

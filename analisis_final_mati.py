@@ -7,19 +7,19 @@ Created on Thu Jul  9 16:54:37 2020
 # CARGA DE PAQUETES
 
 
-import os
-from datetime import datetime
+#import os
+#from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import networkx as nx
-from networkx.algorithms import bipartite
+#from networkx.algorithms import bipartite
 import igraph as ig
-import matplotlib.cm as cm
+#import matplotlib.cm as cm
 import community as community_louvain
-import pickle
+#import pickle
 import funciones_final_mati as func
-
+import random
 
 #%%
 #####################################################################################
@@ -171,9 +171,9 @@ for enf in tag:
         
 #%% ---------------------------- GUARDAR RED ANALIZADA ------------------------------
 
-#tolerancias = [2,3,4,6,7,8,9,11,12,13,14]
+tolerancias = [2,3,4,6,7,8,9,11,12,13,14]
 
-tolerancias = [1]
+#tolerancias = [1]
 
 red_completa.remove_nodes_from(tibios)
 
@@ -187,7 +187,9 @@ for tolerancia in tolerancias:
     
     proyectada = func.proyect_enfermitos(solo_reacters, tolerancia)
     
-    nx.write_gml(proyectada, save_path_red+'tolerancia_{}.gml'.format(tolerancia)) # Red proyectada completa       
+    nx.write_gml(proyectada, save_path_red+'tolerancia_{}.gml'.format(tolerancia)) # Red proyectada completa
+    
+    #nx.write_gml(proyectada, save_path_red+'tolerancia_tibios_{}.gml'.format(tolerancia)) # Red proyectada completa       
     
     
     # Calculamos la componente gigante:
@@ -201,12 +203,16 @@ for tolerancia in tolerancias:
     
     nx.write_gml(gc, save_path_red+'cg_{}.gml'.format(tolerancia))
     
+    #nx.write_gml(gc, save_path_red+'cg_tibios_{}.gml'.format(tolerancia))
+    
 
 #%% ---------------------------- CARGAR COMPONENTE GIGANTE ---------------------------------------------
 
-tolerancia = 11 # Poner la tolerancia utilizada
+tolerancia = 4 # Poner la tolerancia utilizada
 
 red_enf = nx.read_gml(save_path_red+'cg_{}.gml'.format(tolerancia))
+
+#red_enf = nx.read_gml(save_path_red+'cg_tibios_{}.gml'.format(tolerancia))
 
 nx.set_node_attributes(red_enf, tag, 'Categoría Preferida')
 
@@ -255,7 +261,7 @@ fg_ig = fg_dendograma.as_clustering() # Comunidades dadas por Fast Greedy como o
 
 fg_dict = func.ig_part2dict(red_enf_ig, fg_ig)
 
-lou_dict = community_louvain.best_partition(red_enf)
+lou_dict = community_louvain.best_partition(red_enf, random_state = 10)
 
 
 '''
@@ -274,6 +280,17 @@ print('La modularidad por Fast Greedy es:', Q_fg)
 
 print('La modularidad por Louvain es:', Q_lou)
 
+#%% ------------------------------- AGREGAMOS LA COMUNIDAD COMO ATRIBUTO A LOS NODOS ------------------
+
+save_path_red = 'C:/Users/Mati/Documents/GitHub/Redes/datos/redes_gml/'
+
+red = red_enf
+
+nx.set_node_attributes(red, fg_dict, 'Comuna Fast Greedy')
+
+nx.set_node_attributes(red, lou_dict, 'Comuna Louvain')
+
+nx.write_gexf(red_enf, save_path_red + 'comunas_tol_{}.gexf'.format(tolerancia))
 
 #%%
 
@@ -309,7 +326,7 @@ func.graficar_particion(red_enf, lou_dict, posiciones, label='Categoría Preferi
 
 #%% -------------------------------- CLASIFICANDO COMUNIDADES ---------------------------------------------
 
-comu_dict = fg_dict # Poner el diccionario con las comunidades
+comu_dict = lou_dict # Poner el diccionario con las comunidades
 
 comunidades_numero = list(set(comu_dict.values()))
 
@@ -317,7 +334,7 @@ comunidades = []
 
 for comunidad in comunidades_numero:
     
-    comunidades.append([i for i in lou_dict if lou_dict[i]==comunidad]) # Ponemos las comunidades en cada elemento de la lista
+    comunidades.append([i for i in comu_dict if comu_dict[i]==comunidad]) # Ponemos las comunidades en cada elemento de la lista
 
 comunidades_dict = []
 
@@ -365,7 +382,7 @@ el analisis (modelo nulo). Si los histogramas de cada comunidad dan lo mismo, en
 hay algo.
 '''
 
-distrib = []
+distrib = [] # Distribucion real total de categorias, dada por los datos.
 
 for enf in red_enf.nodes():
 
@@ -375,7 +392,9 @@ distrib = np.asarray(distrib)
 
 distrib = sum(distrib)/sum(sum(distrib))
 
-cat_norm_nulo = {}
+#%%
+
+cat_norm_nulo = {} # Diccionario que asigna a cada enfermito una categoria al azar, respetando la distribucion al azar.
 
 for enf in red_enf.nodes():
     
@@ -384,28 +403,72 @@ for enf in red_enf.nodes():
 
 #%%
 
-comunidades_dict_norm = []
+comunidades_dict_nulo = [] # Lista de diccionarios enf:categoria para cada comuna
 
 categorias = [1,2,3,4]
 
 for comunidad in comunidades_numero:
     
-    comunidades_dict_norm.append({key : cat_norm_nulo[key] for key in comunidades[comunidad]})
+    comunidades_dict_nulo.append({key : cat_norm_nulo[key] for key in comunidades[comunidad]})
 
 
-cat_por_com_nulo = []
+cat_por_com_nulo = [] # Lista con la distribucion nula para cada comunidad
 
-for comunidad in comunidades_dict_norm:
+for comunidad in comunidades_dict_nulo:
     
     counts, bins = np.histogram(list(comunidad.values()), bins = categorias+[len(categorias)+1])
 
     cat_por_com_nulo.append(counts/sum(counts))
+    
+    
+#%% -------------------------- MODELO NULO PROMEDIADO --------------------------------------------
+
+n_prom = 100
+
+distribuciones_prom = []
+
+for i in range(n_prom):
+    
+    cat_norm_nulo = {}
+    
+    for enf in red_enf.nodes():
+        
+        cat_norm_nulo[enf] = int(func.dado_cargado([1,2,3,4], distrib))
+
+    comunidades_dict_nulo = [] # Lista de diccionarios enf:categoria para cada comuna
+    
+    categorias = [1,2,3,4]
+    
+    for comunidad in comunidades_numero:
+        
+        comunidades_dict_nulo.append({key : cat_norm_nulo[key] for key in comunidades[comunidad]})
+    
+    
+    cat_por_com_nulo = [] # Lista con la distribucion nula para cada comunidad
+    
+    for comunidad in comunidades_dict_nulo:
+        
+        counts, bins = np.histogram(list(comunidad.values()), bins = categorias+[len(categorias)+1])
+    
+        cat_por_com_nulo.append(counts/sum(counts))
+        
+        
+    distribuciones_prom.append(np.asarray(cat_por_com_nulo))
+
+
+cat_por_com_nulo_prom = []
+
+for fila in sum(distribuciones_prom):
+    
+    cat_por_com_nulo_prom.append(fila/sum(fila))    
+    
+
 
 #%% Grafico
 
 cont = 0
 
-for i in cat_por_com_nulo:
+for i in cat_por_com_nulo_prom:
     
     plt.plot([1,2,3,4], i, '.-', label= 'Comunidad {}'.format(cont))
     
@@ -424,8 +487,112 @@ plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 
 plt.grid()
 
 
+#%% ---------------------------- MODELO NULO 2 ------------------------------------------------------------
 
-#%% ------------------ HISTOGRAMAS PARA CATEGORIAS PREFERIDAS -------------------------
+'''
+La idea es crear la red mezclando las categorias de los post de forma aleatoria.
+'''
+
+props_nulo_2 = {}
+
+cat_norm_nulo_2 = {}
+
+categorias = [1,2,3,4] #(humor negro, verde, serie, interno)
+
+iter_enfermitos = enfermitos # Poner la particion en comunidades como diccionario o lista de enfermitos
+
+for enf in iter_enfermitos:
+    
+    props_nulo_2[enf] = func.prop_enfermitos_nulo(enf, df_completo) # Diccionario con vectores de categorias por enfermito
+
+for enf in props_nulo_2:
+    
+    cat_norm_nulo_2[enf] = func.categorias_norm(props_nulo_2[enf], categorias)
+    
+    
+comunidades_dict_nulo_2 = [] # Lista de diccionarios enf:categoria para cada comuna
+
+categorias = [1,2,3,4]
+
+for comunidad in comunidades_numero:
+    
+    comunidades_dict_nulo_2.append({key : cat_norm_nulo_2[key] for key in comunidades[comunidad]})
+
+#%% ------------------------------ GUARDAR MODELO NULO 2 -----------------------------------
+
+name_nulo = 'modelo_nulo_tol_{}'.format(tolerancia)
+
+func.save_dict(comunidades_dict_nulo_2, path_props, name_nulo)
+
+    
+#%% ------------------------------- CARGAR MODELO NULO 2 -------------------------------------
+
+'''
+Si ya se realizó el modelo nulo para una dada red, cargarlo desde aca.
+'''
+
+name_nulo = 'modelo_nulo_tol_{}'.format(tolerancia)
+
+
+comunidades_dict_nulo2 = func.load_dict(path_props, name_nulo)
+
+
+
+#%%
+
+cat_por_com_nulo_2 = []
+
+for comunidad2 in comunidades_dict_nulo_2:
+    
+    cat_por_com_nulo_2.append(sum(comunidad2.values())/sum(sum(comunidad2.values()))) # Lista con los pesos de cada categoria en cada comuna
+
+cont = 0
+
+for i in cat_por_com_nulo_2:
+    
+    plt.plot([1,2,3,4], i, '.-', label= 'Comunidad {}'.format(cont))
+    
+    cont += 1
+    
+plt.ylabel('Cantidad de likes', fontsize = 20)
+
+plt.title('Distribución Modelo Nulo', fontsize = 20)
+
+plt.legend(fontsize=16)
+
+plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'], fontsize=14)
+
+plt.grid()
+
+
+
+
+'''
+NOTA: NO ESTA PLOTEANDO EL MODELO NULO. CHEQUEAR
+'''
+
+
+
+
+#%% ------------------------------ CORRELACION ENTRE DISTRIBUCION REAL Y MODELOS NULOS ------------------
+
+'''
+Aca pondremos todos los vectores juntos, calcularemos la correlacion-->similitud--> distancia y haremos un dendograma 
+comparandolos.
+'''
+
+
+
+
+
+
+
+
+
+
+
+
+#%% ------------------ HISTOGRAMAS PARA CATEGORIAS PREFERIDAS (analisis viejo) -------------------------
 
 
 comunidad0 = list(comunidades_dict[0].values())

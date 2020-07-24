@@ -10,7 +10,7 @@ import networkx as nx
 from networkx.algorithms import bipartite
 import matplotlib.cm as cm
 from random import choices
-
+import random
 #%%
 #####################################################################################
 #                                    FUNCIONES
@@ -158,6 +158,33 @@ def prop_enfermitos(enf, df):
         if enf in df['reacters'][i]:
             
             prop.append(int(df['categoria'][i]))
+    
+    
+    return prop
+
+
+def prop_enfermitos_nulo(enf, df):
+    
+    '''
+    Pide un enfermito y el dataframe con los datos de posts, posteadores y reacters. 
+    Mezcla las categorias de los post y devuelve una lista con las categorias nuevas de los posts que likeo
+    '''
+    
+    prop = []
+    
+    categorias = list(df['categoria'])
+    
+    random.shuffle(categorias)
+    
+    random.shuffle(categorias)
+    
+    random.shuffle(categorias)
+    
+    for i in range(len(df)):
+        
+        if enf in df['reacters'][i]:
+            
+            prop.append(int(categorias[i]))
     
     
     return prop

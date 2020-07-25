@@ -15,11 +15,11 @@ import pandas as pd
 import networkx as nx
 #from networkx.algorithms import bipartite
 import igraph as ig
-#import matplotlib.cm as cm
+import matplotlib.cm as cm
 import community as community_louvain
 #import pickle
 import funciones_final_mati as func
-import random
+#import random
 
 #%%
 #####################################################################################
@@ -326,7 +326,7 @@ func.graficar_particion(red_enf, lou_dict, posiciones, label='Categoría Preferi
 
 #%% -------------------------------- CLASIFICANDO COMUNIDADES ---------------------------------------------
 
-comu_dict = lou_dict # Poner el diccionario con las comunidades
+comu_dict = fg_dict # Poner el diccionario con las comunidades
 
 comunidades_numero = list(set(comu_dict.values()))
 
@@ -356,16 +356,18 @@ cat_por_com = []
 for comunidad in comunidades_dict:
     
     cat_por_com.append(sum(comunidad.values())/sum(sum(comunidad.values()))) # Lista con los pesos de cada categoria en cada comuna
+
 cont = 0
+
 for i in cat_por_com:
     
     plt.plot([1,2,3,4], i, '.-', label= 'Comunidad {}'.format(cont))
     
     cont += 1
     
-plt.ylabel('Cantidad de likes', fontsize = 20)
+plt.ylabel('Proporción de Likes', fontsize = 20)
 
-plt.title('Distribución real', fontsize = 20)
+plt.title('Distribución real de likes por comuna', fontsize = 20)
 
 plt.legend(fontsize=16)
 
@@ -476,9 +478,9 @@ for i in cat_por_com_nulo_prom:
     
 #plt.xlabel('Categorias', fontsize = 20)
 
-plt.ylabel('Cantidad de likes', fontsize = 20)
+plt.ylabel('Proporción de likes', fontsize = 20)
 
-plt.title('Distribución para modelo Nulo', fontsize = 20)
+plt.title('Distribución de likes por comuna en el Modelo Nulo 1', fontsize = 20)
 
 plt.legend(fontsize=16)
 
@@ -520,7 +522,9 @@ for comunidad in comunidades_numero:
 
 #%% ------------------------------ GUARDAR MODELO NULO 2 -----------------------------------
 
-name_nulo = 'modelo_nulo_tol_{}'.format(tolerancia)
+nombre_algo = 'fg'
+
+name_nulo = 'modelo_nulo_{}_tol_{}'.format(nombre_algo, tolerancia)
 
 func.save_dict(comunidades_dict_nulo_2, path_props, name_nulo)
 
@@ -529,12 +533,16 @@ func.save_dict(comunidades_dict_nulo_2, path_props, name_nulo)
 
 '''
 Si ya se realizó el modelo nulo para una dada red, cargarlo desde aca.
+
+NOTA: lo correcto sería hacerlo de cero cada vez.
 '''
 
-name_nulo = 'modelo_nulo_tol_{}'.format(tolerancia)
+nombre_algo = 'fg'
+
+name_nulo = 'modelo_nulo_{}_tol_{}'.format(nombre_algo, tolerancia)
 
 
-comunidades_dict_nulo2 = func.load_dict(path_props, name_nulo)
+comunidades_dict_nulo_2 = func.load_dict(path_props, name_nulo)
 
 
 
@@ -554,9 +562,9 @@ for i in cat_por_com_nulo_2:
     
     cont += 1
     
-plt.ylabel('Cantidad de likes', fontsize = 20)
+plt.ylabel('Proporción de likes', fontsize = 20)
 
-plt.title('Distribución Modelo Nulo', fontsize = 20)
+plt.title('Distribución de likes por comuna en el Modelo Nulo 2', fontsize = 20)
 
 plt.legend(fontsize=16)
 
@@ -567,26 +575,133 @@ plt.grid()
 
 
 
-'''
-NOTA: NO ESTA PLOTEANDO EL MODELO NULO. CHEQUEAR
-'''
-
-
-
-
 #%% ------------------------------ CORRELACION ENTRE DISTRIBUCION REAL Y MODELOS NULOS ------------------
 
 '''
 Aca pondremos todos los vectores juntos, calcularemos la correlacion-->similitud--> distancia y haremos un dendograma 
 comparandolos.
 '''
+cmap = cm.get_cmap('RdYlGn')
+
+labels = ['Com. 0', 'Com. 1', 'Com. 2', 'Com. 3', 'Com. 0 M.N.', 'Com. 1 M.N.', 
+          'Com. 2 M.N.', 'Com. 3 M.N.']
+
+
+# MODELO NULO 1
+
+corr1 = np.corrcoef(cat_por_com + cat_por_com_nulo)
+
+sim1 = (1 + corr1 )/2
+
+
+fig1, ax1 = plt.subplots(figsize=(20,20))
+
+cax1 = ax1.matshow(sim1, cmap = cmap)
+
+plt.title('Similaridad entre comunas y Modelo Nulo 1', fontsize=20)
+
+plt.xticks(range(8), labels)
+
+plt.yticks(range(8), labels)
+
+fig1.colorbar(cax1, ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, .75,.8,.85,.90,.95,1])
+
+plt.show()
+
+
+
+#%%
+# MODELO NULO 2
+
+corr2 = np.corrcoef(cat_por_com + cat_por_com_nulo_2)
+
+sim2 = (1 + corr2 )/2
+
+
+fig2, ax2 = plt.subplots(figsize=(20,20))
+
+cax2 = ax2.matshow(sim2, cmap = cmap)
+
+plt.title('Similaridad entre comunas y Modelo Nulo 2', fontsize=20)
+
+plt.xticks(range(8), labels)
+
+plt.yticks(range(8), labels)
+
+fig2.colorbar(cax2, ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, .75,.8,.85,.90,.95,1])
+
+plt.show()
+
+
+#%%
+
+# SIMILITUD ENTRE ENFERMITOS DE UNA MISMA COMUNIDAD
+
+enf_ordenados = []
+
+for comuna in comunidades:
+    
+    enf_ordenados = enf_ordenados + comuna # Lista con los enfermitos ordenados por comuna
+
+cat_ordenadas = []
+
+for enf in enf_ordenados:
+    
+    cat_ordenadas.append(cat_norm[enf]) # Lista con los vectores de categorias likeadas por cada enfermito
+
+corr_enf = np.corrcoef(cat_ordenadas)
+
+sim_enf = (1+corr_enf)/2
+
+
+ticks = []
+
+tick_count = 0
+
+for i in range(len(comunidades)):
+    
+    ticks.append(tick_count)
+    
+    tick_count += len(comunidades[i])
+
+label_com = []
+
+for i in range(len(comunidades)):
+    
+    label_com.append('Inicio Comunidad {}'.format(i))
+
+
+
+fig_enf, ax_enf = plt.subplots(figsize=(20,20))
+
+cax_enf = ax_enf.matshow(sim_enf, cmap = cmap)
+
+plt.title('Similaridad entre Reaccionadores', fontsize=20)
+
+plt.xticks(ticks, label_com)
+
+plt.yticks(ticks, label_com)
+
+fig_enf.colorbar(cax_enf, ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, .75,.8,.85,.90,.95,1])
+
+plt.show()
 
 
 
 
 
-
-
+# labels = []
+# for hood in hood_menu_data:
+# labels.append(hood["properties"]['NAME'])
+ 
+# fig, ax = plt.subplots(figsize=(20,20))
+# cax = ax.matshow(hood_cosine_matrix, interpolation='nearest')
+# ax.grid(True)
+# plt.title('San Francisco Similarity matrix')
+# plt.xticks(range(33), labels, rotation=90);
+# plt.yticks(range(33), labels);
+# fig.colorbar(cax, ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, .75,.8,.85,.90,.95,1])
+# plt.show()
 
 
 

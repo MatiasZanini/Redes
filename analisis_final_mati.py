@@ -291,16 +291,17 @@ func.save_dict(lou_dict, path_com, 'louvain_tol_{}'.format(tolerancia))
 
 func.save_dict(fg_dict, path_com, 'fast_greedy_tol_{}'.format(tolerancia))
 
+func.save_dict(fg_ig, path_com, 'fast_greedy_ig_tol_{}'.format(tolerancia))
+
 
 
 #%% ---------------------------- CARGAR LA PARTICION ----------------------------------------------
 
+path_com = 'C:/Users/Mati/Documents/GitHub/Redes/datos/comunidades/'
+
 lou_dict = func.load_dict(path_com, 'louvain_tol_{}'.format(tolerancia))
 
 fg_dict = func.load_dict(path_com, 'fast_greedy_tol_{}'.format(tolerancia))
-
-
-
 
 
 
@@ -350,7 +351,7 @@ func.graficar_particion(red_enf, lou_dict, posiciones, label='Categoría Preferi
 
 #%% -------------------------------- CLASIFICANDO COMUNIDADES ---------------------------------------------
 
-comu_dict = fg_dict # Poner el diccionario con las comunidades
+comu_dict = lou_dict # Poner el diccionario con las comunidades
 
 comunidades_numero = list(set(comu_dict.values()))
 
@@ -405,7 +406,9 @@ plt.grid()
 Estimación de las modularidades:
 '''
 
-Q_fg = red_enf_ig.modularity(fg_ig, weights='weight')
+categorias = [1,2,3,4]
+
+Q_fg = red_enf_ig.modularity(fg_ig, weights='weight') # Correr "CALCULO DE COMUNIDADES". Sino Igraph no anda.
 
 if comu_dict == lou_dict:
     
@@ -427,6 +430,7 @@ for categoria in categorias:
     
     comunidades_por_cat.append([i for i in red_enf.nodes() if tag[i] == categoria])
 
+
 Q_pref = nx.algorithms.community.modularity(red_enf, comunidades_por_cat)
 
 print('La modularidad por Louvain es:', Q_lou)
@@ -435,6 +439,9 @@ print('La modularidad por Fast greedy es:', Q_fg)
 
 print('La modularidad de comunidades por categoría es:', Q_pref)
 
+print('La info mutua para Louvain y Cat. Pref es:', func.info_mutua(lou_dict, tag, red_enf))
+
+print('La info mutua para Fast Greedy y Cat. Pref es:', func.info_mutua(fg_dict, tag, red_enf))
 
 #%% ------------------------------------- COMPARACION CON MODELO NULO -------------------------------------------
 
@@ -489,6 +496,8 @@ n_prom = 100
 
 modularidades = []
 
+info_mutua = []
+
 distribuciones_prom = []
 
 for i in tqdm(range(n_prom)):
@@ -524,6 +533,8 @@ for i in tqdm(range(n_prom)):
     
     modularidades.append(nx.algorithms.community.modularity(red_enf, comunidades_nulo))    
     
+    info_mutua.append(func.info_mutua(comu_dict, cat_norm_nulo, red_enf))
+    
     distribuciones_prom.append(np.asarray(cat_por_com_nulo))
 
 
@@ -542,6 +553,8 @@ func.save_dict(cat_por_com_nulo_prom, path_props, 'modelo_nulo_prom_1_{}_tol_{}'
 
 func.save_dict(modularidades, path_props, 'modularidades_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
+func.save_dict(info_mutua, path_props, 'info_mutua_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+
 #%% ---------------------------- CARGAR MODELO NULO 1 PROMEDIADO ------------------------------------
 
 nombre_algo = 'lou'
@@ -550,7 +563,7 @@ cat_por_com_nulo_prom = func.load_dict(path_props, 'modelo_nulo_prom_1_{}_tol_{}
 
 modularidades = func.load_dict(path_props, 'modularidades_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-
+info_mutua = func.load_dict(path_props, 'info_mutua_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
 
 
@@ -615,6 +628,11 @@ plt.axvline(Q_pref, color = 'y', linestyle = '--', label = 'Modularidad partici�
 
 plt.legend(loc = 9, fontsize=16)
 
+#%%
+
+algo = 'Louvain'
+
+print('Info Mutua {} - Modelo Nulo 1:'.format(algo), np.mean(info_mutua), '+-', np.std(info_mutua))
 
 
 
@@ -662,6 +680,8 @@ for comunidad2 in comunidades_dict_nulo_2:
 n_prom = 10
 
 modularidades_2 = []
+
+info_mutua_2 = []
 
 distribuciones_prom_2 = []
 
@@ -726,6 +746,8 @@ for i in tqdm(range(n_prom)):
         cat_por_com_nulo_2.append(sum(comunidad2.values())/sum(sum(comunidad2.values()))) # Lista con los pesos de cada categoria en cada comuna
     
     
+    info_mutua_2.append(func.info_mutua(comu_dict, tag_nulo_2, red_enf))
+    
     modularidades_2.append(nx.algorithms.community.modularity(red_enf, comunidades_nulo_2))    
     
     distribuciones_prom_2.append(np.asarray(cat_por_com_nulo_2))
@@ -746,6 +768,8 @@ func.save_dict(cat_por_com_nulo_prom_2, path_props, 'modelo_nulo_prom_2_{}_tol_{
 
 func.save_dict(modularidades_2, path_props, 'modularidades_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
+func.save_dict(info_mutua_2, path_props, 'info_mutua_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+
 #%% ---------------------------- CARGAR MODELO NULO 2 PROMEDIADO ------------------------------------
 
 nombre_algo = 'lou'
@@ -753,6 +777,8 @@ nombre_algo = 'lou'
 cat_por_com_nulo_prom_2 = func.load_dict(path_props, 'modelo_nulo_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
 modularidades_2 = func.load_dict(path_props, 'modularidades_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+info_mutua_2 = func.load_dict(path_props, 'info_mutua_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
 #%%
 
@@ -811,10 +837,14 @@ plt.title('Distribución de likes por comuna en el Modelo Nulo 2', fontsize = 20
 
 plt.legend(fontsize=16)
 
-plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'], fontsize=14)
+plt.xticks([1,2,3,4], labels = ['Humor Negro', 'Humor Verde', 'Humor de Series', 'Humor Interno'], fontsize=14)
 
 plt.grid()
 
+#%%
+algo = 'Louvain'
+
+print('Info Mutua {} - Modelo Nulo 2:'.format(algo), np.mean(info_mutua_2), '+-', np.std(info_mutua_2))
 
 
 

@@ -19,7 +19,8 @@ import matplotlib.cm as cm
 import community as community_louvain
 #import pickle
 import funciones_final_mati as func
-#import random
+from tqdm import tqdm
+import random
 
 #%%
 #####################################################################################
@@ -268,17 +269,40 @@ lou_dict = community_louvain.best_partition(red_enf, random_state = 10)
 Estimación de las modularidades:
 '''
 
-Q_infomap = red_enf_ig.modularity(infomap_ig)
+Q_infomap = red_enf_ig.modularity(infomap_ig, weights='weight')
 
-Q_fg = red_enf_ig.modularity(fg_ig)
+Q_fg = red_enf_ig.modularity(fg_ig, weights='weight')
 
-Q_lou = func.calcular_modularidad(red_enf, lou_dict)
+#Q_lou = func.calcular_modularidad(red_enf, lou_dict)
+
+#Q_lou = nx.algorithms.community.modularity(red_enf, lou_dict)
 
 print('La modularidad por infomap es:', Q_infomap)
 
 print('La modularidad por Fast Greedy es:', Q_fg)
 
-print('La modularidad por Louvain es:', Q_lou)
+#print('La modularidad por Louvain es:', Q_lou)
+
+#%% ------------------------------- GUARDAR LA PARTICION --------------------------------------------
+
+path_com = 'C:/Users/Mati/Documents/GitHub/Redes/datos/comunidades/'
+
+func.save_dict(lou_dict, path_com, 'louvain_tol_{}'.format(tolerancia))
+
+func.save_dict(fg_dict, path_com, 'fast_greedy_tol_{}'.format(tolerancia))
+
+
+
+#%% ---------------------------- CARGAR LA PARTICION ----------------------------------------------
+
+lou_dict = func.load_dict(path_com, 'louvain_tol_{}'.format(tolerancia))
+
+fg_dict = func.load_dict(path_com, 'fast_greedy_tol_{}'.format(tolerancia))
+
+
+
+
+
 
 #%% ------------------------------- AGREGAMOS LA COMUNIDAD COMO ATRIBUTO A LOS NODOS ------------------
 
@@ -371,9 +395,45 @@ plt.title('Distribución real de likes por comuna', fontsize = 20)
 
 plt.legend(fontsize=16)
 
-plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'], fontsize=14)
+plt.xticks([1,2,3,4], labels = ['Humor Negro', 'Humor Verde', 'Humor de Series', 'Humor Interno'], fontsize=14)
 
 plt.grid()
+
+#%%
+
+'''
+Estimación de las modularidades:
+'''
+
+Q_fg = red_enf_ig.modularity(fg_ig, weights='weight')
+
+if comu_dict == lou_dict:
+    
+    Q_lou = nx.algorithms.community.modularity(red_enf, comunidades)
+    
+else:
+    
+    comunidades_lou = []
+
+    for comunidad in comunidades_numero:
+    
+        comunidades_lou.append([i for i in lou_dict if lou_dict[i]==comunidad])   
+    
+    Q_lou = nx.algorithms.community.modularity(red_enf, comunidades_lou)
+
+comunidades_por_cat = []
+
+for categoria in categorias:
+    
+    comunidades_por_cat.append([i for i in red_enf.nodes() if tag[i] == categoria])
+
+Q_pref = nx.algorithms.community.modularity(red_enf, comunidades_por_cat)
+
+print('La modularidad por Louvain es:', Q_lou)
+
+print('La modularidad por Fast greedy es:', Q_fg)
+
+print('La modularidad de comunidades por categoría es:', Q_pref)
 
 
 #%% ------------------------------------- COMPARACION CON MODELO NULO -------------------------------------------
@@ -427,9 +487,11 @@ for comunidad in comunidades_dict_nulo:
 
 n_prom = 100
 
+modularidades = []
+
 distribuciones_prom = []
 
-for i in range(n_prom):
+for i in tqdm(range(n_prom)):
     
     cat_norm_nulo = {}
     
@@ -453,8 +515,15 @@ for i in range(n_prom):
         counts, bins = np.histogram(list(comunidad.values()), bins = categorias+[len(categorias)+1])
     
         cat_por_com_nulo.append(counts/sum(counts))
+    
+    comunidades_nulo = []    
+    
+    for categoria in categorias:
         
-        
+        comunidades_nulo.append([i for i in cat_norm_nulo if cat_norm_nulo[i] == categoria])
+    
+    modularidades.append(nx.algorithms.community.modularity(red_enf, comunidades_nulo))    
+    
     distribuciones_prom.append(np.asarray(cat_por_com_nulo))
 
 
@@ -464,6 +533,25 @@ for fila in sum(distribuciones_prom):
     
     cat_por_com_nulo_prom.append(fila/sum(fila))    
     
+
+#%% ------------------------------ GUARDAR MODELO NULO 1 PROMEDIADO ----------------------------------
+
+nombre_algo = 'lou'
+
+func.save_dict(cat_por_com_nulo_prom, path_props, 'modelo_nulo_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+func.save_dict(modularidades, path_props, 'modularidades_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+#%% ---------------------------- CARGAR MODELO NULO 1 PROMEDIADO ------------------------------------
+
+nombre_algo = 'lou'
+
+cat_por_com_nulo_prom = func.load_dict(path_props, 'modelo_nulo_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+modularidades = func.load_dict(path_props, 'modularidades_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+
+
 
 
 #%% Grafico
@@ -487,6 +575,47 @@ plt.legend(fontsize=16)
 plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'], fontsize=14)
 
 plt.grid()
+
+#%%
+
+counts_mod, bins_mod, patches = plt.hist(modularidades, bins='auto', color='#0504aa',
+                            alpha=0.7, rwidth=0.85)
+plt.grid(axis='y', alpha=0.75)
+
+plt.xlabel('Modularidad', fontsize = 16)
+
+plt.ylabel('Ocurrencia', fontsize = 16)
+
+plt.title('Modularidad para Modelo Nulo 1', fontsize=20)
+
+# plt.text(23, 45, r'$\mu=15, b=3$')
+
+maxfreq = counts_mod.max()
+
+# Set a clean upper y-axis limit.
+
+
+
+plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
+
+plt.xlim(min(bins_mod)-0.01, max([Q_lou, Q_fg, Q_pref]) + 0.01)
+
+plt.xticks(np.sort([np.mean(modularidades), Q_lou, Q_fg, Q_pref, (Q_lou+np.mean(modularidades))/2,
+                    ((Q_lou+np.mean(modularidades))/2+np.mean(modularidades))/2]), fontsize=14, rotation = 30)
+
+plt.yticks(fontsize = 14)
+
+plt.axvline(np.mean(modularidades), color = 'r', linestyle = '--', label = 'Modularidad Promedio Modelo Nulo 1', linewidth=2)
+
+plt.axvline(Q_lou, color = 'm', linestyle = '--', label = 'Modularidad partición por Louvain', linewidth=5)
+
+plt.axvline(Q_fg, color = 'g', linestyle = '--', label = 'Modularidad partición por Fast Greedy', linewidth=5)
+
+plt.axvline(Q_pref, color = 'y', linestyle = '--', label = 'Modularidad partición por Cat. Preferida', linewidth=5)
+
+plt.legend(loc = 9, fontsize=16)
+
+
 
 
 #%% ---------------------------- MODELO NULO 2 ------------------------------------------------------------
@@ -519,44 +648,158 @@ categorias = [1,2,3,4]
 for comunidad in comunidades_numero:
     
     comunidades_dict_nulo_2.append({key : cat_norm_nulo_2[key] for key in comunidades[comunidad]})
-
-#%% ------------------------------ GUARDAR MODELO NULO 2 -----------------------------------
-
-nombre_algo = 'fg'
-
-name_nulo = 'modelo_nulo_{}_tol_{}'.format(nombre_algo, tolerancia)
-
-func.save_dict(comunidades_dict_nulo_2, path_props, name_nulo)
-
     
-#%% ------------------------------- CARGAR MODELO NULO 2 -------------------------------------
-
-'''
-Si ya se realizó el modelo nulo para una dada red, cargarlo desde aca.
-
-NOTA: lo correcto sería hacerlo de cero cada vez.
-'''
-
-nombre_algo = 'fg'
-
-name_nulo = 'modelo_nulo_{}_tol_{}'.format(nombre_algo, tolerancia)
-
-
-comunidades_dict_nulo_2 = func.load_dict(path_props, name_nulo)
-
-
-
-#%%
-
+    
 cat_por_com_nulo_2 = []
 
 for comunidad2 in comunidades_dict_nulo_2:
     
     cat_por_com_nulo_2.append(sum(comunidad2.values())/sum(sum(comunidad2.values()))) # Lista con los pesos de cada categoria en cada comuna
 
+
+#%% ----------------------------- MODELO NULO 2 PROMEDIADO ---------------------------------------
+
+n_prom = 10
+
+modularidades_2 = []
+
+distribuciones_prom_2 = []
+
+iter_enfermitos = enfermitos # Poner la particion en comunidades como diccionario o lista de enfermitos
+
+for i in tqdm(range(n_prom)):
+    
+    props_nulo_2 = {}
+    
+    tag_nulo_2 = {}
+
+    cat_norm_nulo_2 = {}
+    
+    categorias = [1,2,3,4] #(humor negro, verde, serie, interno)
+    
+    for enf in iter_enfermitos:
+        
+        props_nulo_2[enf] = func.prop_enfermitos_nulo(enf, df_completo) # Diccionario con vectores de categorias por enfermito
+    
+    for enf in props_nulo_2:
+        
+        cat_norm_nulo_2[enf] = func.categorias_norm(props_nulo_2[enf], categorias)
+    
+        
+    for enf in props:
+        
+        valor = func.tag_enfermitos_nulo(enf, df_completo, categorias, props_nulo_2)
+        
+        if type(valor) != np.int32:
+            
+            tag_nulo_2[enf] = random.sample(list(valor), 1)[0]
+            
+        else:
+        
+            tag_nulo_2[enf] = valor
+    
+        
+    comunidades_dict_nulo_2 = [] # Lista de diccionarios enf:distribucion para cada comuna
+    
+    comunidades_tag_nulo_2 = [] # Lista de diccionarios enf:categoria_pref para cada comuna
+    
+    categorias = [1,2,3,4]
+    
+    for comunidad in comunidades_numero:
+        
+        comunidades_dict_nulo_2.append({key : cat_norm_nulo_2[key] for key in comunidades[comunidad]})
+        
+    for comunidad in comunidades_numero:
+        
+        comunidades_tag_nulo_2.append({key : tag_nulo_2[key] for key in comunidades[comunidad]})
+
+    comunidades_nulo_2 = []    
+    
+    for categoria in categorias:
+        
+        comunidades_nulo_2.append([i for i in red_enf.nodes() if tag_nulo_2[i] == categoria])
+    
+    cat_por_com_nulo_2 = []
+
+    for comunidad2 in comunidades_dict_nulo_2:
+        
+        cat_por_com_nulo_2.append(sum(comunidad2.values())/sum(sum(comunidad2.values()))) # Lista con los pesos de cada categoria en cada comuna
+    
+    
+    modularidades_2.append(nx.algorithms.community.modularity(red_enf, comunidades_nulo_2))    
+    
+    distribuciones_prom_2.append(np.asarray(cat_por_com_nulo_2))
+    
+
+cat_por_com_nulo_prom_2 = []
+
+for fila in sum(distribuciones_prom_2):
+    
+    cat_por_com_nulo_prom_2.append(fila/sum(fila)) 
+
+
+#%% ------------------------------ GUARDAR MODELO NULO 2 PROMEDIADO ----------------------------------
+
+nombre_algo = 'lou'
+
+func.save_dict(cat_por_com_nulo_prom_2, path_props, 'modelo_nulo_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+func.save_dict(modularidades_2, path_props, 'modularidades_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+#%% ---------------------------- CARGAR MODELO NULO 2 PROMEDIADO ------------------------------------
+
+nombre_algo = 'lou'
+
+cat_por_com_nulo_prom_2 = func.load_dict(path_props, 'modelo_nulo_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+modularidades_2 = func.load_dict(path_props, 'modularidades_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+
+#%%
+
+
+counts_mod_2, bins_mod_2, patches = plt.hist(modularidades_2, bins='auto', color='#0504aa',
+                            alpha=0.7, rwidth=0.85)
+plt.grid(axis='y', alpha=0.75)
+
+plt.xlabel('Modularidad', fontsize = 16)
+
+plt.ylabel('Ocurrencia', fontsize = 16)
+
+plt.title('Modularidad para Modelo Nulo 2', fontsize=20)
+
+# plt.text(23, 45, r'$\mu=15, b=3$')
+
+maxfreq = counts_mod_2.max()
+
+# Set a clean upper y-axis limit.
+
+
+
+plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
+
+plt.xlim(min(bins_mod_2)-0.01, max([Q_lou, Q_fg, Q_pref]) + 0.01)
+
+plt.xticks(np.sort([np.mean(modularidades_2), Q_lou, Q_fg, Q_pref, (Q_lou+np.mean(modularidades_2))/2,
+                    ((Q_lou+np.mean(modularidades_2))/2+np.mean(modularidades_2))/2]), fontsize=14, rotation = 30)
+
+plt.yticks(fontsize = 14)
+
+plt.axvline(np.mean(modularidades_2), color = 'r', linestyle = '--', label = 'Modularidad Promedio Modelo Nulo 2', linewidth=2)
+
+plt.axvline(Q_lou, color = 'm', linestyle = '--', label = 'Modularidad partición por Louvain', linewidth=5)
+
+plt.axvline(Q_fg, color = 'g', linestyle = '--', label = 'Modularidad partición por Fast Greedy', linewidth=5)
+
+plt.axvline(Q_pref, color = 'y', linestyle = '--', label = 'Modularidad partición por Cat. Preferida', linewidth=5)
+
+plt.legend(loc = 9, fontsize=16)
+
+
+#%%
+
 cont = 0
 
-for i in cat_por_com_nulo_2:
+for i in cat_por_com_nulo_prom_2:
     
     plt.plot([1,2,3,4], i, '.-', label= 'Comunidad {}'.format(cont))
     
@@ -589,7 +832,7 @@ labels = ['Com. 0', 'Com. 1', 'Com. 2', 'Com. 3', 'Com. 0 M.N.', 'Com. 1 M.N.',
 
 # MODELO NULO 1
 
-corr1 = np.corrcoef(cat_por_com + cat_por_com_nulo)
+corr1 = np.corrcoef(cat_por_com + cat_por_com_nulo_prom)
 
 sim1 = (1 + corr1 )/2
 
@@ -613,7 +856,7 @@ plt.show()
 #%%
 # MODELO NULO 2
 
-corr2 = np.corrcoef(cat_por_com + cat_por_com_nulo_2)
+corr2 = np.corrcoef(cat_por_com + cat_por_com_nulo_prom_2)
 
 sim2 = (1 + corr2 )/2
 

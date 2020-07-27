@@ -9,8 +9,10 @@ import numpy as np
 import networkx as nx
 from networkx.algorithms import bipartite
 import matplotlib.cm as cm
+from matplotlib import pyplot as plt
 from random import choices
 import random
+from sklearn.metrics import normalized_mutual_info_score as mis # Función para calcular información mutua
 #%%
 #####################################################################################
 #                                    FUNCIONES
@@ -213,6 +215,35 @@ def tag_enfermitos(enf, df, categorias):
     return tag
 
 
+
+def tag_enfermitos_nulo(enf, df, categorias, props):
+    
+    '''
+    Pide un enfermito, el dataframe con los datos de los posts y una lista con las categorias.
+    Devuelve un int con la categoria preferida del enfermito o un array con las categorias preferidas si era mas de una.
+    '''
+    
+    
+    counts, bins = np.histogram(np.asarray(props[enf]), bins = categorias+[len(categorias)+1])
+    
+    index_maximos = [i for i, x in enumerate(counts) if x == max(counts)]
+    
+    if len(index_maximos)==1:
+        
+        tag = bins[index_maximos[0]]
+        
+    else:
+        
+        tag = bins[index_maximos] # Si tiene mas de una categoria preferida, se guarda un array con dichas categorias.
+
+    return tag
+
+
+
+
+
+
+
 def categorias_norm(likes, categorias):
     
     cant_posts = len(likes)
@@ -276,18 +307,94 @@ def dado_cargado(poblacion, distribucion, cant_muestras = 1):
     return np.asarray(choices(poblacion, distribucion, k = cant_muestras))
     
 
+def modularidad(particion, matrix_pesos):
+    
+    W = np.sum(matrix_pesos)
+    
+    fuerzas = [np.sum(matrix_pesos[n,:]) for n in np.arange(0, matrix_pesos.shape[0])]
+    
+    Q = 0
+    
+    for i in np.arange(np.min(particion),np.max(particion)+1):
+    
+        indices = np.where(np.array(particion)==i)[0]
+        
+        for j in indices:
+        
+            for k in indices:
+            
+                Q = Q + matrix_pesos[j][k] - fuerzas[j] * fuerzas[k] /(2 * W)
+    
+    Q=Q / (2 * W)
+    
+    return Q
+
+
+def silhouette(Red,particion): # La función nos pide la Red y la partición como diccionario
+  S=[]
+  limites=[0]
+  # Recorro los clusters sin repetir
+  for cluster in set(particion.values()): 
+    #Filtro los nodos que pertenecen a este cluster
+    nodos_en_cluster = [nodo for (nodo, value) in particion.items() if value == cluster] 
+    S_cluster=[]
+    # Recorro los nodos del cluster
+    for nodo in nodos_en_cluster:
+      distancias_dentro=[]
+      distancias_fuera=[]
+      # Recorro los nodos del mismo cluster
+      for nodo_en_cluster in nodos_en_cluster:
+        if nodo != nodo_en_cluster:
+          # Calculo y guardo la distancia, si no es consigo mismo
+          distancias_dentro.append(nx.shortest_path_length(Red, source=nodo, target=nodo_en_cluster, weight=None))
+      # Recorro los nodos de los otros clusters
+      for nodo_fuera in Red.nodes():
+        if particion[nodo_fuera] != cluster:
+          # Calculo y guardo la distancia
+          distancias_fuera.append(nx.shortest_path_length(Red, source=nodo, target=nodo_fuera, weight=None)) 
+      # Calculo la distancia media para los del mismo cluster
+      distancia_media_dentro=np.mean(distancias_dentro)
+      # Calculo la distancia mínima para los nodos fuera del cluster
+      distancia_min_fuera=np.min(distancias_fuera)
+      # Calculo y guardo la Silhouette del nodo
+      S_cluster.append((distancia_min_fuera-distancia_media_dentro)/np.max([distancia_min_fuera,distancia_media_dentro]))
+    # Ordeno las Silhouette del mismo cluster por valor, para graficar lindo
+    S_cluster=sorted(S_cluster)
+    # Me guardo en qué nodo termina cada cluster, para graficar clusters por colores
+    limites.append(len(S_cluster)+limites[-1])
+    # Agrego las Silhouette de este cluster a la lista de todas
+    S = S + S_cluster
+  # Calculo la Silhouette media
+  S_media = np.mean(S)
+  # Grafico todas con colores por clusters
+  for i in range(len(limites)-1):
+    plt.plot(range(limites[i],limites[i+1]),S[limites[i]:limites[i+1]])
+  plt.plot(range(0,limites[-1]),S_media*np.ones(limites[-1]))
+  return S,S_media
 
 
 
-
-
-
-
-
-
-
-
-
+def info_mutua(particion_1,particion_2, red):
+    
+    info_1 = []
+    
+    info_2 = []
+    
+    for nodo in red.nodes():
+      
+        info_1.append(particion_1[nodo])
+      
+        info_2.append(particion_2[nodo])
+    
+    info_1 = np.array(info_1)
+    
+    info_2 = np.array(info_2)
+    
+    return mis(info_1, info_2, average_method='arithmetic') #Esta es la función que calcula info mutua
+    
+    
+    
+    
 
 
 

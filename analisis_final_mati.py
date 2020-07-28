@@ -220,6 +220,33 @@ nx.set_node_attributes(red_enf, tag, 'Categoría Preferida')
 
 red_enf_ig = ig.Graph.TupleList(red_enf.edges(), directed=False)
 
+#%%
+
+# Valores útiles:
+    
+grados = red_enf.degree()
+
+grados_val = [j for i,j in grados]
+
+grado_medio = np.mean(grados_val)
+
+
+edges=red_enf.edges()
+
+peso = [red_enf[u][v]['weight'] for u,v in edges]
+
+peso_medio = np.mean(peso)
+
+
+print('Grado Medio:', grado_medio)
+
+print('Peso Medio:', peso_medio)
+
+print('Nodos:', len(red_enf.nodes()))
+
+print('Enlaces:', len(red_enf.edges()))
+
+
 #%% ---------------------------- AGREGARLE EL TAG A LOS NODOS COMO PROPIEDAD ---------------------------
 
 #red = red_completa
@@ -351,7 +378,7 @@ func.graficar_particion(red_enf, lou_dict, posiciones, label='Categoría Preferi
 
 #%% -------------------------------- CLASIFICANDO COMUNIDADES ---------------------------------------------
 
-comu_dict = lou_dict # Poner el diccionario con las comunidades
+comu_dict = fg_dict # Poner el diccionario con las comunidades
 
 comunidades_numero = list(set(comu_dict.values()))
 
@@ -397,6 +424,8 @@ plt.title('Distribución real de likes por comuna', fontsize = 20)
 plt.legend(fontsize=16)
 
 plt.xticks([1,2,3,4], labels = ['Humor Negro', 'Humor Verde', 'Humor de Series', 'Humor Interno'], fontsize=14)
+
+plt.yticks(fontsize=14)
 
 plt.grid()
 
@@ -547,7 +576,7 @@ for fila in sum(distribuciones_prom):
 
 #%% ------------------------------ GUARDAR MODELO NULO 1 PROMEDIADO ----------------------------------
 
-nombre_algo = 'lou'
+nombre_algo = 'fg'
 
 func.save_dict(cat_por_com_nulo_prom, path_props, 'modelo_nulo_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
@@ -557,7 +586,7 @@ func.save_dict(info_mutua, path_props, 'info_mutua_nulo_1_{}_tol_{}'.format(nomb
 
 #%% ---------------------------- CARGAR MODELO NULO 1 PROMEDIADO ------------------------------------
 
-nombre_algo = 'lou'
+nombre_algo = 'fg'
 
 cat_por_com_nulo_prom = func.load_dict(path_props, 'modelo_nulo_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
@@ -585,7 +614,9 @@ plt.title('Distribución de likes por comuna en el Modelo Nulo 1', fontsize = 20
 
 plt.legend(fontsize=16)
 
-plt.xticks([1,2,3,4], labels = ['Categoría 1', 'Categoría 2', 'Categoría 3', 'Categoría 4'], fontsize=14)
+plt.xticks([1,2,3,4], labels = ['Humor Negro', 'Humor Verde', 'Humor de Series', 'Humor Interno'], fontsize=14)
+
+plt.yticks(fontsize=14)
 
 plt.grid()
 
@@ -630,7 +661,7 @@ plt.legend(loc = 9, fontsize=16)
 
 #%%
 
-algo = 'Louvain'
+algo = 'Fast Greedy'
 
 print('Info Mutua {} - Modelo Nulo 1:'.format(algo), np.mean(info_mutua), '+-', np.std(info_mutua))
 
@@ -677,7 +708,7 @@ for comunidad2 in comunidades_dict_nulo_2:
 
 #%% ----------------------------- MODELO NULO 2 PROMEDIADO ---------------------------------------
 
-n_prom = 10
+n_prom = 20
 
 modularidades_2 = []
 
@@ -762,7 +793,7 @@ for fila in sum(distribuciones_prom_2):
 
 #%% ------------------------------ GUARDAR MODELO NULO 2 PROMEDIADO ----------------------------------
 
-nombre_algo = 'lou'
+nombre_algo = 'fg'
 
 func.save_dict(cat_por_com_nulo_prom_2, path_props, 'modelo_nulo_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
@@ -782,9 +813,10 @@ info_mutua_2 = func.load_dict(path_props, 'info_mutua_nulo_2_{}_tol_{}'.format(n
 
 #%%
 
-
 counts_mod_2, bins_mod_2, patches = plt.hist(modularidades_2, bins='auto', color='#0504aa',
                             alpha=0.7, rwidth=0.85)
+
+
 plt.grid(axis='y', alpha=0.75)
 
 plt.xlabel('Modularidad', fontsize = 16)

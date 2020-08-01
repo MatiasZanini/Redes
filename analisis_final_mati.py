@@ -21,6 +21,7 @@ import community as community_louvain
 import funciones_final_mati as func
 from tqdm import tqdm
 import random
+import scipy as sp
 
 #%%
 #####################################################################################
@@ -158,7 +159,7 @@ cat_norm = func.load_dict(path_props, name_cat_norm)
 
 
 
-#%%----------------------------------- PROYECCIONES ----------------------------------
+#%%----------------------------------- RECORTES ----------------------------------
 
 tibios = []
 
@@ -169,14 +170,25 @@ for enf in tag:
     if type(tag[enf]) == tipo_array:
         
         tibios.append(enf)
-        
+               
+entropias = [sp.stats.entropy(i) for i in cat_norm.values()]
+
+nans = [i for i in range(len(entropias)) if np.isnan(entropias[i])]
+
+entropias = {list(cat_norm)[i] : entropias[i] for i in range(len(entropias)) if i not in nans}
+
+
 #%% ---------------------------- GUARDAR RED ANALIZADA ------------------------------
 
-tolerancias = [2,3,4,6,7,8,9,11,12,13,14]
+tolerancias = [2,3,4]
 
-#tolerancias = [1]
+tol_entrop = np.mean(list(entropias.values()))
 
-red_completa.remove_nodes_from(tibios)
+entrop_borrar = [i for i in entropias if entropias[i] > tol_entrop]
+
+# red_completa.remove_nodes_from(tibios)
+
+# red_completa.remove_nodes_from(entrop_borrar)
 
 for tolerancia in tolerancias:
         
@@ -188,7 +200,11 @@ for tolerancia in tolerancias:
     
     proyectada = func.proyect_enfermitos(solo_reacters, tolerancia)
     
-    nx.write_gml(proyectada, save_path_red+'tolerancia_{}.gml'.format(tolerancia)) # Red proyectada completa
+    proyectada.remove_nodes_from(tibios)
+
+    proyectada.remove_nodes_from(entrop_borrar)
+    
+    nx.write_gml(proyectada, save_path_red+'tolerancia_entrop_{}.gml'.format(tolerancia)) # Red proyectada completa
     
     #nx.write_gml(proyectada, save_path_red+'tolerancia_tibios_{}.gml'.format(tolerancia)) # Red proyectada completa       
     
@@ -202,16 +218,16 @@ for tolerancia in tolerancias:
     
     gc.remove_nodes_from(nodos_no_gc)
     
-    nx.write_gml(gc, save_path_red+'cg_{}.gml'.format(tolerancia))
+    nx.write_gml(gc, save_path_red+'cg_entrop_{}.gml'.format(tolerancia))
     
     #nx.write_gml(gc, save_path_red+'cg_tibios_{}.gml'.format(tolerancia))
     
 
 #%% ---------------------------- CARGAR COMPONENTE GIGANTE ---------------------------------------------
 
-tolerancia = 4 # Poner la tolerancia utilizada
+tolerancia = 2 # Poner la tolerancia utilizada
 
-red_enf = nx.read_gml(save_path_red+'cg_{}.gml'.format(tolerancia))
+red_enf = nx.read_gml(save_path_red+'cg_entrop_{}.gml'.format(tolerancia))
 
 #red_enf = nx.read_gml(save_path_red+'cg_tibios_{}.gml'.format(tolerancia))
 
@@ -314,11 +330,11 @@ print('La modularidad por Fast Greedy es:', Q_fg)
 
 path_com = 'C:/Users/Mati/Documents/GitHub/Redes/datos/comunidades/'
 
-func.save_dict(lou_dict, path_com, 'louvain_tol_{}'.format(tolerancia))
+func.save_dict(lou_dict, path_com, 'louvain_entrop_tol_{}'.format(tolerancia))
 
-func.save_dict(fg_dict, path_com, 'fast_greedy_tol_{}'.format(tolerancia))
+func.save_dict(fg_dict, path_com, 'fast_greedy_entrop_tol_{}'.format(tolerancia))
 
-func.save_dict(fg_ig, path_com, 'fast_greedy_ig_tol_{}'.format(tolerancia))
+func.save_dict(fg_ig, path_com, 'fast_greedy__entrop_ig_tol_{}'.format(tolerancia))
 
 
 
@@ -326,9 +342,9 @@ func.save_dict(fg_ig, path_com, 'fast_greedy_ig_tol_{}'.format(tolerancia))
 
 path_com = 'C:/Users/Mati/Documents/GitHub/Redes/datos/comunidades/'
 
-lou_dict = func.load_dict(path_com, 'louvain_tol_{}'.format(tolerancia))
+lou_dict = func.load_dict(path_com, 'louvain_entrop_tol_{}'.format(tolerancia))
 
-fg_dict = func.load_dict(path_com, 'fast_greedy_tol_{}'.format(tolerancia))
+fg_dict = func.load_dict(path_com, 'fast_greedy_entrop_tol_{}'.format(tolerancia))
 
 
 
@@ -342,7 +358,7 @@ nx.set_node_attributes(red, fg_dict, 'Comuna Fast Greedy')
 
 nx.set_node_attributes(red, lou_dict, 'Comuna Louvain')
 
-nx.write_gexf(red_enf, save_path_red + 'comunas_tol_{}.gexf'.format(tolerancia))
+nx.write_gexf(red_enf, save_path_red + 'comunas_entrop_tol_{}.gexf'.format(tolerancia))
 
 #%%
 
@@ -378,7 +394,7 @@ func.graficar_particion(red_enf, lou_dict, posiciones, label='Categoría Preferi
 
 #%% -------------------------------- CLASIFICANDO COMUNIDADES ---------------------------------------------
 
-comu_dict = fg_dict # Poner el diccionario con las comunidades
+comu_dict = lou_dict # Poner el diccionario con las comunidades
 
 comunidades_numero = list(set(comu_dict.values()))
 
@@ -576,23 +592,23 @@ for fila in sum(distribuciones_prom):
 
 #%% ------------------------------ GUARDAR MODELO NULO 1 PROMEDIADO ----------------------------------
 
-nombre_algo = 'fg'
+nombre_algo = 'lou'
 
-func.save_dict(cat_por_com_nulo_prom, path_props, 'modelo_nulo_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+func.save_dict(cat_por_com_nulo_prom, path_props, 'modelo_nulo_entrop_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-func.save_dict(modularidades, path_props, 'modularidades_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+func.save_dict(modularidades, path_props, 'modularidades_nulo_entrop_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-func.save_dict(info_mutua, path_props, 'info_mutua_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+func.save_dict(info_mutua, path_props, 'info_mutua_nulo_entrop_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
 #%% ---------------------------- CARGAR MODELO NULO 1 PROMEDIADO ------------------------------------
 
-nombre_algo = 'fg'
+nombre_algo = 'lou'
 
-cat_por_com_nulo_prom = func.load_dict(path_props, 'modelo_nulo_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+cat_por_com_nulo_prom = func.load_dict(path_props, 'modelo_nulo_entrop_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-modularidades = func.load_dict(path_props, 'modularidades_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+modularidades = func.load_dict(path_props, 'modularidades_nulo_entrop_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-info_mutua = func.load_dict(path_props, 'info_mutua_nulo_1_{}_tol_{}'.format(nombre_algo, tolerancia))
+info_mutua = func.load_dict(path_props, 'info_mutua_nulo_entrop_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
 
 
@@ -645,7 +661,7 @@ plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
 plt.xlim(min(bins_mod)-0.01, max([Q_lou, Q_fg, Q_pref]) + 0.01)
 
 plt.xticks(np.sort([np.mean(modularidades), Q_lou, Q_fg, Q_pref, (Q_lou+np.mean(modularidades))/2,
-                    ((Q_lou+np.mean(modularidades))/2+np.mean(modularidades))/2]), fontsize=14, rotation = 30)
+                    ((Q_lou+np.mean(modularidades))/2+np.mean(modularidades))/2]), fontsize=14, rotation = 45)
 
 plt.yticks(fontsize = 14)
 
@@ -661,7 +677,7 @@ plt.legend(loc = 9, fontsize=16)
 
 #%%
 
-algo = 'Fast Greedy'
+algo = 'Louvain'
 
 print('Info Mutua {} - Modelo Nulo 1:'.format(algo), np.mean(info_mutua), '+-', np.std(info_mutua))
 
@@ -793,23 +809,23 @@ for fila in sum(distribuciones_prom_2):
 
 #%% ------------------------------ GUARDAR MODELO NULO 2 PROMEDIADO ----------------------------------
 
-nombre_algo = 'fg'
+nombre_algo = 'lou'
 
-func.save_dict(cat_por_com_nulo_prom_2, path_props, 'modelo_nulo_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+func.save_dict(cat_por_com_nulo_prom_2, path_props, 'modelo_nulo_entrop_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-func.save_dict(modularidades_2, path_props, 'modularidades_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+func.save_dict(modularidades_2, path_props, 'modularidades_nulo_entrop_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-func.save_dict(info_mutua_2, path_props, 'info_mutua_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+func.save_dict(info_mutua_2, path_props, 'info_mutua_nulo_entrop_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
 #%% ---------------------------- CARGAR MODELO NULO 2 PROMEDIADO ------------------------------------
 
 nombre_algo = 'lou'
 
-cat_por_com_nulo_prom_2 = func.load_dict(path_props, 'modelo_nulo_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+cat_por_com_nulo_prom_2 = func.load_dict(path_props, 'modelo_nulo_entrop_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-modularidades_2 = func.load_dict(path_props, 'modularidades_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+modularidades_2 = func.load_dict(path_props, 'modularidades_nulo_entrop_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
-info_mutua_2 = func.load_dict(path_props, 'info_mutua_nulo_2_{}_tol_{}'.format(nombre_algo, tolerancia))
+info_mutua_2 = func.load_dict(path_props, 'info_mutua_nulo_entrop_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
 #%%
 
@@ -838,7 +854,7 @@ plt.ylim(ymax=np.ceil(maxfreq / 10) * 10 if maxfreq % 10 else maxfreq + 10)
 plt.xlim(min(bins_mod_2)-0.01, max([Q_lou, Q_fg, Q_pref]) + 0.01)
 
 plt.xticks(np.sort([np.mean(modularidades_2), Q_lou, Q_fg, Q_pref, (Q_lou+np.mean(modularidades_2))/2,
-                    ((Q_lou+np.mean(modularidades_2))/2+np.mean(modularidades_2))/2]), fontsize=14, rotation = 30)
+                    ((Q_lou+np.mean(modularidades_2))/2+np.mean(modularidades_2))/2]), fontsize=14, rotation = 45)
 
 plt.yticks(fontsize = 14)
 
@@ -983,7 +999,7 @@ cax_enf = ax_enf.matshow(sim_enf, cmap = cmap)
 
 plt.title('Similaridad entre Reaccionadores', fontsize=20)
 
-plt.xticks(ticks, label_com)
+plt.xticks(ticks, label_com, rotation=30)
 
 plt.yticks(ticks, label_com)
 
@@ -993,20 +1009,38 @@ plt.show()
 
 
 
+#%% -------------------------------------- DETECTAR POSTS DE ENFERMITOS --------------------------------------
 
 
-# labels = []
-# for hood in hood_menu_data:
-# labels.append(hood["properties"]['NAME'])
- 
-# fig, ax = plt.subplots(figsize=(20,20))
-# cax = ax.matshow(hood_cosine_matrix, interpolation='nearest')
-# ax.grid(True)
-# plt.title('San Francisco Similarity matrix')
-# plt.xticks(range(33), labels, rotation=90);
-# plt.yticks(range(33), labels);
-# fig.colorbar(cax, ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, .75,.8,.85,.90,.95,1])
-# plt.show()
+post_por_comuna = []
+
+for comuna in comunidades:
+    
+    post_por_enf = []
+    
+    for enf in comuna:
+        
+        links = [df_completo['url'][i] for i in range(len(df_completo)) if enf in df_completo['reacters'][i]]
+        
+        post_por_enf = post_por_enf + links
+        
+    post_por_comuna.append(list(set(post_por_enf)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

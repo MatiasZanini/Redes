@@ -22,6 +22,7 @@ import funciones_final_mati as func
 from tqdm import tqdm
 import random
 import scipy as sp
+import webbrowser as wb
 
 #%%
 #####################################################################################
@@ -1028,21 +1029,15 @@ for comuna in comunidades:
 
 
 
+#%% abrir los posts en el navegador
 
 
+comuna = 0
 
 
-
-
-
-
-
-
-
-
-
-
-
+for link in post_por_comuna[comuna]:
+    
+    wb.open_new_tab(link)
 
 
 

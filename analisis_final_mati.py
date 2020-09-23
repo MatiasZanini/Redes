@@ -245,6 +245,10 @@ grados = red_enf.degree()
 
 grados_val = [j for i,j in grados]
 
+grado_min = min(grados_val)
+
+grado_max = max(grados_val)
+
 grado_medio = np.mean(grados_val)
 
 
@@ -252,12 +256,24 @@ edges=red_enf.edges()
 
 peso = [red_enf[u][v]['weight'] for u,v in edges]
 
+peso_min = min(peso)
+
+peso_max = max(peso)
+
 peso_medio = np.mean(peso)
 
 
 print('Grado Medio:', grado_medio)
 
+print('Grado Mínimo:', grado_min)
+
+print('Grado Máximo:', grado_max)
+
 print('Peso Medio:', peso_medio)
+
+print('Peso Mínimo:', peso_min)
+
+print('Peso Máximo:', peso_max)
 
 print('Nodos:', len(red_enf.nodes()))
 
@@ -593,7 +609,7 @@ for fila in sum(distribuciones_prom):
 
 #%% ------------------------------ GUARDAR MODELO NULO 1 PROMEDIADO ----------------------------------
 
-nombre_algo = 'lou'
+nombre_algo = 'fg'
 
 func.save_dict(cat_por_com_nulo_prom, path_props, 'modelo_nulo_entrop_prom_1_{}_tol_{}'.format(nombre_algo, tolerancia))
 
@@ -678,7 +694,7 @@ plt.legend(loc = 9, fontsize=16)
 
 #%%
 
-algo = 'Louvain'
+algo = 'Fast Greedy'
 
 print('Info Mutua {} - Modelo Nulo 1:'.format(algo), np.mean(info_mutua), '+-', np.std(info_mutua))
 
@@ -810,7 +826,7 @@ for fila in sum(distribuciones_prom_2):
 
 #%% ------------------------------ GUARDAR MODELO NULO 2 PROMEDIADO ----------------------------------
 
-nombre_algo = 'lou'
+nombre_algo = 'fg'
 
 func.save_dict(cat_por_com_nulo_prom_2, path_props, 'modelo_nulo_entrop_prom_2_{}_tol_{}'.format(nombre_algo, tolerancia))
 
@@ -891,7 +907,7 @@ plt.xticks([1,2,3,4], labels = ['Humor Negro', 'Humor Verde', 'Humor de Series',
 plt.grid()
 
 #%%
-algo = 'Louvain'
+algo = 'Fast Greedy'
 
 print('Info Mutua {} - Modelo Nulo 2:'.format(algo), np.mean(info_mutua_2), '+-', np.std(info_mutua_2))
 
@@ -905,8 +921,10 @@ comparandolos.
 '''
 cmap = cm.get_cmap('RdYlGn')
 
-labels = ['Com. 0', 'Com. 1', 'Com. 2', 'Com. 3', 'Com. 0 M.N.', 'Com. 1 M.N.', 
-          'Com. 2 M.N.', 'Com. 3 M.N.']
+#labels = ['Com. 0', 'Com. 1', 'Com. 2', 'Com. 3', 'Com. 0 M.N.', 'Com. 1 M.N.', 
+ #         'Com. 2 M.N.', 'Com. 3 M.N.']
+
+labels = ['Com. {}'.format(i) for i in comunidades_numero] + ['Com. {} M.N.'.format(i) for i in comunidades_numero]
 
 
 # MODELO NULO 1
@@ -922,9 +940,9 @@ cax1 = ax1.matshow(sim1, cmap = cmap)
 
 plt.title('Similaridad entre comunas y Modelo Nulo 1', fontsize=20)
 
-plt.xticks(range(8), labels)
+plt.xticks(range(len(labels)), labels, rotation=20)
 
-plt.yticks(range(8), labels)
+plt.yticks(range(len(labels)), labels)
 
 fig1.colorbar(cax1, ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, .75,.8,.85,.90,.95,1])
 
@@ -946,9 +964,9 @@ cax2 = ax2.matshow(sim2, cmap = cmap)
 
 plt.title('Similaridad entre comunas y Modelo Nulo 2', fontsize=20)
 
-plt.xticks(range(8), labels)
+plt.xticks(range(len(labels)), labels, rotation=20)
 
-plt.yticks(range(8), labels)
+plt.yticks(range(len(labels)), labels)
 
 fig2.colorbar(cax2, ticks=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, .75,.8,.85,.90,.95,1])
 
@@ -1000,7 +1018,7 @@ cax_enf = ax_enf.matshow(sim_enf, cmap = cmap)
 
 plt.title('Similaridad entre Reaccionadores', fontsize=20)
 
-plt.xticks(ticks, label_com, rotation=30)
+plt.xticks(ticks, label_com, rotation=10)
 
 plt.yticks(ticks, label_com)
 
@@ -1029,10 +1047,10 @@ for comuna in comunidades:
 
 
 
-#%% abrir los posts en el navegador
+#%% abrir los posts en el navegador (ojo porque consume mucha ram si son muchas tabs)
 
 
-comuna = 0
+comuna = 3
 
 
 for link in post_por_comuna[comuna]:
